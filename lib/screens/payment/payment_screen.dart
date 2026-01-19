@@ -1,0 +1,136 @@
+import 'package:car_rent_app/screens/payment/payment_methods.dart';
+import 'package:flutter/material.dart';
+import '../../models/booking_model.dart';
+import '../../models/car_model.dart';
+import '../../models/user_model.dart';
+import '../../utils/theme.dart';
+import '../../widgets/booking_card.dart';
+import '../../widgets/custom_app_bar.dart';
+
+class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({
+    super.key,
+    required this.car,
+    required this.user,
+    required this.startDate,
+    required this.endDate,
+    required this.pickupLocation,
+    required this.dropoffLocation,
+  });
+
+  final Car car;
+  final User user;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String pickupLocation;
+  final String dropoffLocation;
+
+  @override
+  _PaymentScreenState createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen> {
+  late BookingModel booking;
+
+  // Calculate total amount based on number of days
+  double _calculateTotalAmount() {
+    final days = widget.endDate.difference(widget.startDate).inDays;
+    return widget.car.pricePerDay * (days == 0 ? 1 : days); // Minimum 1 day
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Create booking from the passed data
+    booking = BookingModel(
+      id: "",
+      carId: widget.car.id!,
+      userId: widget.user.id,
+      carName: widget.car.name, // Use car.name instead of car.brand
+      startDate: widget.startDate,
+      endDate: widget.endDate,
+      pickupLocation: widget.pickupLocation,
+      dropoffLocation: widget.dropoffLocation,
+      amount: _calculateTotalAmount(), // Use calculated total amount
+      paymentId: '',
+      rating: widget.car.rating,
+      trips: widget.car.trips ?? 0, // Use car.trips or default to 0
+      paymentStatus: 'pending',
+      bookingStatus: 'pending',
+      status: 'active',
+      bookingDate: DateTime.now(),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalAmount = widget.car.pricePerDay * booking.durationInDays;
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: CustomAppBar(
+        title: 'Complete Payment',
+        iconButton: IconButton(
+          icon: const Icon(Icons.more_horiz, color: textPrimary),
+          onPressed: () {},
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            BookingCard(
+              car: widget.car,
+              booking: booking,
+              onCancel: (booking) async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Cancelled booking ${booking.id}'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+                Navigator.pop(context);
+              },
+              onPay: (booking) async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentMethodsScreen(
+                      amount: totalAmount, // Use booking.amount instead of booking.totalAmount
+                      currency: 'INR',
+                      carId: widget.car.id!,
+                      startDate: booking.startDate,
+                      endDate: booking.endDate,
+                      pickupLocation: widget.pickupLocation.isNotEmpty
+                          ? widget.pickupLocation
+                          : "Default Pickup Location",
+                      dropoffLocation: widget.dropoffLocation.isNotEmpty
+                          ? widget.dropoffLocation
+                          : "Default Dropoff Location",
+                      carName: widget.car.name, // Use widget.car.name instead of booking.carName
+                      rating: widget.car.rating,
+                      trips: widget.car.trips ?? 0, // Use widget.car.trips with null safety
+                    ),
+                  ),
+                );
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Redirecting to payment methods'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+  }
+}
