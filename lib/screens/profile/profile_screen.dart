@@ -13,10 +13,10 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  ProfileScreenState createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -92,7 +92,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+
+    // 🔄 FIRST: block UI while logging out
+    if (authProvider?.isLoggingOut == true) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // 🔐 SECOND: user is null after logout
+    if (authProvider == null || authProvider.user == null) {
+      return const SizedBox.shrink(); // or LoginScreen()
+    }
+
     final user = authProvider.user!.isHost;
+
     final bool isHost = user;
     return Scaffold(
       backgroundColor: lightGray,

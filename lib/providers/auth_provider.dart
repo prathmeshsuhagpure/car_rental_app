@@ -12,6 +12,7 @@ class AuthProvider with ChangeNotifier {
   String? _token;
   bool _isLoading = false;
   bool _isHost = false;
+  bool isLoggingOut = false;
 
   final ApiService _apiService = ApiService();
 
@@ -380,20 +381,20 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> logout() async {
-    _setLoading(true);
+    isLoggingOut = true;
+    notifyListeners();
 
     try {
-      // Call API logout (best-effort)
       await _apiService.logout();
     } catch (e) {
       debugPrint("API logout error (ignored): $e");
     }
 
-    // 🔥 ALWAYS clear local state
     await _clearAllData();
 
-    _setLoading(false);
+    isLoggingOut = false;
     notifyListeners();
+
     return true;
   }
 

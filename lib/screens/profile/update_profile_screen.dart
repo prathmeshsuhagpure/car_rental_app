@@ -22,6 +22,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final _phoneController = TextEditingController();
   final _driverLicenseController = TextEditingController();
   final _aadharCardController = TextEditingController();
+
   final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
@@ -92,9 +93,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       }
 
       if (imageFiles.isEmpty) {
-        _showErrorSnackBar('No images selected for upload.');
+        debugPrint('No images selected. Skipping image upload.');
         return;
       }
+
+      setState(() {
+        _isUploadingImage = true;
+      });
 
       // Call API to upload multiple images
       final response = await _apiService.uploadImages(
@@ -182,13 +187,17 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   void initState() {
     super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     _nameController.text = authProvider.user?.name ?? '';
     _emailController.text = authProvider.user?.email ?? '';
     _phoneController.text = authProvider.user?.phoneNumber ?? '';
     _driverLicenseController.text =
         authProvider.user?.driverLicenseNumber ?? '';
     _aadharCardController.text = authProvider.user?.aadharCardNumber ?? '';
-    _selectedGender = authProvider.user?.gender;
+    final genderFromApi = authProvider.user?.gender;
+    _selectedGender = _genderOptions.contains(genderFromApi)
+        ? genderFromApi
+        : null;
     _selectedDateOfBirth = authProvider.user?.dateOfBirth;
   }
 
@@ -281,7 +290,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -298,7 +307,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                               color: accentGreen,
                               borderRadius: BorderRadius.circular(55),
                               border: Border.all(
-                                color: primaryGreen.withOpacity(0.2),
+                                color: primaryGreen.withValues(alpha: 0.2),
                                 width: 3,
                               ),
                             ),
@@ -427,7 +436,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -470,7 +479,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -663,10 +672,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _phoneController,
-          enabled: false,
+          enabled: true,
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: darkGray,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
@@ -695,14 +704,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               ),
             ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: Colors.grey.shade100,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -727,7 +732,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedGender,
+          value: _genderOptions.contains(_selectedGender) ? _selectedGender : null,
           decoration: InputDecoration(
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),

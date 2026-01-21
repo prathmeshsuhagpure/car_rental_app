@@ -30,7 +30,6 @@ class _HomeContentState extends State<HomeContent> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      // AppBar added here for home screen only
       appBar: AppBar(
         title: const Text(
           'DailyDrive',
@@ -57,10 +56,10 @@ class _HomeContentState extends State<HomeContent> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -96,7 +95,7 @@ class _HomeContentState extends State<HomeContent> {
                     border: Border.all(color: Colors.grey[200]!),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         offset: const Offset(0, 2),
                         blurRadius: 8,
                       ),
@@ -144,7 +143,7 @@ class _HomeContentState extends State<HomeContent> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0D6B30).withOpacity(0.3),
+                      color: const Color(0xFF0D6B30).withValues(alpha: 0.3),
                       offset: const Offset(0, 8),
                       blurRadius: 24,
                     ),
@@ -155,7 +154,7 @@ class _HomeContentState extends State<HomeContent> {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(50),
                       ),
                       child: CircleAvatar(
@@ -177,10 +176,10 @@ class _HomeContentState extends State<HomeContent> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome back,',
+                            'Welcome ,',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -272,7 +271,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0D6B30).withOpacity(0.1),
+                      color: const Color(0xFF0D6B30).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: TextButton(
@@ -395,7 +394,7 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0D6B30).withOpacity(0.3),
+                      color: const Color(0xFF0D6B30).withValues(alpha: 0.3),
                       offset: const Offset(0, 8),
                       blurRadius: 24,
                     ),
@@ -409,7 +408,7 @@ class _HomeContentState extends State<HomeContent> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(
@@ -436,7 +435,7 @@ class _HomeContentState extends State<HomeContent> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
@@ -456,7 +455,7 @@ class _HomeContentState extends State<HomeContent> {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             offset: const Offset(0, 4),
                             blurRadius: 12,
                           ),
@@ -523,7 +522,7 @@ class _HomeContentState extends State<HomeContent> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0D6B30).withOpacity(0.3),
+                    color: const Color(0xFF0D6B30).withValues(alpha: 0.3),
                     offset: const Offset(0, 4),
                     blurRadius: 12,
                   ),

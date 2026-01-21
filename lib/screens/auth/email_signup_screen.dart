@@ -17,11 +17,25 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+
   bool _isLoading = false;
   bool _isHost = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isLoginMode = false;
+  bool _isLoginMode = true;
+
+  bool get _isFormValid {
+    if (_isLoginMode) {
+      return _emailController.text.trim().isNotEmpty &&
+          _passwordController.text.trim().isNotEmpty;
+    } else {
+      return _nameController.text.trim().isNotEmpty &&
+          _emailController.text.trim().isNotEmpty &&
+          _passwordController.text.trim().isNotEmpty &&
+          _confirmPasswordController.text.trim().isNotEmpty &&
+          _passwordController.text == _confirmPasswordController.text;
+    }
+  }
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
@@ -187,6 +201,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       ),
       child: TextField(
         controller: _nameController,
+        onChanged: (_) => setState(() {}),
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Full Name',
@@ -209,6 +224,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       ),
       child: TextField(
         controller: _emailController,
+        onChanged: (_) => setState(() {}),
         keyboardType: TextInputType.emailAddress,
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
@@ -232,6 +248,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       ),
       child: TextField(
         controller: _passwordController,
+        onChanged: (_) => setState(() {}),
         obscureText: _obscurePassword,
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
@@ -268,6 +285,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       ),
       child: TextField(
         controller: _confirmPasswordController,
+        onChanged: (_) => setState(() {}),
         obscureText: _obscureConfirmPassword,
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
@@ -356,188 +374,117 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
 
   Widget _buildSubmitButton() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    bool isFormValid = _isLoginMode
-        ? _emailController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty
-        : _emailController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty &&
-        _confirmPasswordController.text.isNotEmpty &&
-        _nameController.text.isNotEmpty;
 
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (isFormValid && !_isLoading)
+        onPressed: (_isFormValid && !_isLoading)
             ? () async {
-          // Validation checks
-          if (!_isValidEmail(_emailController.text.trim())) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Please enter a valid email address"),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
+                setState(() {
+                  _isLoading = true;
+                });
 
-          if (!_isStrongPassword(_passwordController.text)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Password must be at least 6 characters"),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
+                try {
+                  Map<String, dynamic>? result;
 
-          if (!_isLoginMode &&
-              _passwordController.text !=
-                  _confirmPasswordController.text) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Passwords do not match"),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
+                  if (_isLoginMode) {
+                    result = await authProvider.loginWithEmail(
+                      _emailController.text.trim(),
+                      _passwordController.text,
+                      _isHost,
+                    );
+                  } else {
+                    result = await authProvider.signupWithEmail(
+                      _nameController.text.trim(),
+                      _emailController.text.trim(),
+                      _passwordController.text,
+                      _isHost,
+                    );
+                  }
 
-          setState(() {
-            _isLoading = true;
-          });
+                  if (!mounted) return;
 
-          try {
-            Map<String, dynamic>? result;
+                  setState(() {
+                    _isLoading = false;
+                  });
 
-            if (_isLoginMode) {
-              result = await authProvider.loginWithEmail(
-                _emailController.text.trim(),
-                _passwordController.text,
-                _isHost,
-              );
-            } else {
-              result = await authProvider.signupWithEmail(
-                _nameController.text.trim(),
-                _emailController.text.trim(),
-                _passwordController.text,
-                _isHost,
-              );
-            }
+                  if (result == null || result['success'] != true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          result?['message'] ??
+                              (_isLoginMode ? "Login failed" : "Signup failed"),
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
 
-            setState(() {
-              _isLoading = false;
-            });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result['message'] ??
+                            (_isLoginMode
+                                ? "Login successful"
+                                : "Account created successfully"),
+                      ),
+                      backgroundColor: const Color(0xFF059669),
+                    ),
+                  );
 
-            // ✅ Add null check
-            if (result == null) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Unexpected error occurred"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => result?['isHost'] == true
+                          ? const HostHomeScreen()
+                          : const UserHomeScreen(),
+                    ),
+                    (route) => false,
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+
+                  setState(() {
+                    _isLoading = false;
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error: ${e.toString()}"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
-              return;
-            }
-
-            if (!mounted) return;
-
-            if (result['success'] == true) {
-              // Show success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] ??
-                      (_isLoginMode
-                          ? "Login successful"
-                          : "Account created successfully")),
-                  backgroundColor: const Color(0xFF059669),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-
-              // ✅ Use pushAndRemoveUntil instead of pushReplacement
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => result?['isHost'] == true
-                      ? const HostHomeScreen()
-                      : const UserHomeScreen(),
-                ),
-                    (route) => false, // Remove all previous routes
-              );
-            } else {
-              // Show error message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['message'] ??
-                      (_isLoginMode ? "Login failed" : "Signup failed")),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-              debugPrint("Auth error: ${result['message']}");
-            }
-          } catch (e) {
-            setState(() {
-              _isLoading = false;
-            });
-
-            if (mounted) {
-              // ✅ Better error handling
-              String errorMessage = "An error occurred";
-
-              if (e.toString().contains('Network') ||
-                  e.toString().contains('SocketException')) {
-                errorMessage = "Network error. Please check your connection.";
-              } else if (e.toString().contains('timeout')) {
-                errorMessage = "Request timed out. Please try again.";
-              } else {
-                errorMessage = "Error: ${e.toString()}";
-              }
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(errorMessage),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-              debugPrint("Exception during auth: $e");
-            }
-          }
-        }
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF059669),
-          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFF475569),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 0,
-          disabledBackgroundColor: const Color(0xFF475569),
-          shadowColor: const Color(0xFF059669).withValues(alpha: 0.5),
         ),
         child: _isLoading
             ? const SizedBox(
-          height: 24,
-          width: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : Text(
-          _isLoginMode
-              ? (_isHost ? 'Login as Host' : 'Login')
-              : (_isHost ? 'Sign Up as Host' : 'Sign Up'),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
+                _isLoginMode
+                    ? (_isHost ? 'Login as Host' : 'Login')
+                    : (_isHost ? 'Sign Up as Host' : 'Sign Up'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
@@ -548,6 +495,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
         onPressed: () {
           setState(() {
             _isLoginMode = !_isLoginMode;
+            _clearAuthFields();
           });
         },
         child: RichText(
@@ -612,5 +560,12 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
     _confirmPasswordController.dispose();
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _clearAuthFields() {
+    _emailController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
+    _nameController.clear();
   }
 }
