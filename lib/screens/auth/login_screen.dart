@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/helper.dart';
 import 'otp_screen.dart';
+import 'email_signup_screen.dart'; // Add this import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +19,7 @@ class LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   late CountryCode _selectedCountry;
   bool _isLoading = false;
-  bool _isHost = false; // Add this line
+  bool _isHost = false;
 
   final apiService = ApiService();
 
@@ -31,15 +32,15 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark slate background
+      backgroundColor: const Color(0xFF0F172A),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0F172A), // Dark slate
-              Color(0xFF1E293B), // Slightly lighter slate
+              Color(0xFF0F172A),
+              Color(0xFF1E293B),
             ],
           ),
         ),
@@ -70,8 +71,8 @@ class LoginScreenState extends State<LoginScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF059669), // Emerald green
-            Color(0xFF10B981), // Lighter emerald
+            Color(0xFF059669),
+            Color(0xFF10B981),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -112,7 +113,7 @@ class LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B), // Dark card background
+        color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: const Color(0xFF334155).withOpacity(0.3),
@@ -150,9 +151,13 @@ class LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 24),
           _buildPhoneInput(),
           const SizedBox(height: 24),
-          _buildHostCheckbox(), // Add this line
+          _buildHostCheckbox(),
           const SizedBox(height: 32),
           _buildSubmitButton(),
+          const SizedBox(height: 24),
+          _buildDivider(), // Add divider
+          const SizedBox(height: 24),
+          _buildEmailLoginLink(), // Add email login link
           const SizedBox(height: 24),
           _buildTermsText(),
         ],
@@ -163,7 +168,7 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildCountryCodeDropdown() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF334155), // Darker input background
+        color: const Color(0xFF334155),
         border: Border.all(color: const Color(0xFF475569), width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -242,7 +247,6 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Add this new method
   Widget _buildHostCheckbox() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -330,7 +334,7 @@ class LoginScreenState extends State<LoginScreen> {
               MaterialPageRoute(
                 builder: (context) => OTPScreen(
                   phoneNumber: fullPhone,
-                  isHost: _isHost, // Pass the host status
+                  isHost: _isHost,
                 ),
               ),
             );
@@ -351,7 +355,7 @@ class LoginScreenState extends State<LoginScreen> {
         }
             : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF059669), // Emerald green
+          backgroundColor: const Color(0xFF059669),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -370,7 +374,7 @@ class LoginScreenState extends State<LoginScreen> {
           ),
         )
             : Text(
-          _isHost ? 'Continue as Host' : 'Submit', // Dynamic button text
+          _isHost ? 'Continue as Host' : 'Submit',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -381,6 +385,75 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Add this new method for the divider
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(
+            color: Colors.grey[600],
+            thickness: 1,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'OR',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: Colors.grey[600],
+            thickness: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailLoginLink() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EmailSignupScreen(),
+            ),
+          );
+        },
+        icon: const Icon(
+          Icons.email_outlined,
+          color: Color(0xFF059669),
+        ),
+        label: const Text(
+          'Continue with Email',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(
+            color: Color(0xFF059669),
+            width: 2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: const Color(0xFF059669).withOpacity(0.1),
+        ),
+      ),
+    );
+  }
 
   Widget _buildTermsText() {
     return Center(

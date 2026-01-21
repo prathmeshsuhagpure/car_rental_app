@@ -12,6 +12,9 @@ class ApiConstants {
   static const verifyOtp = '/api/auth/verify-otp';
   static const verifyUserAccount = '/api/auth/verify-user-account';
   static const uploadProfilePic = '/api/auth/upload-user-images';
+  static const signup = '/api/auth/signup';
+  static const login = '/api/auth/login';
+
 
   //Save FCM Token End Point
   static const saveFcmToken = '/api/auth/save-fcm-token';

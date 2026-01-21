@@ -52,32 +52,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title:
-            const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Logout',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryGreen,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
-    if (result == true) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.logout();
 
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
+    if (result != true) return;
+
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.logout();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/login',
+      (route) => false,
+    );
   }
 
   @override
@@ -768,8 +777,7 @@ void showVerificationBottomSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     builder: (context) => ProfileVerificationBottomSheet(
       registeredPhoneNumber: registeredPhoneNumber,
-      onVerificationComplete: (isVerified) {
-      },
+      onVerificationComplete: (isVerified) {},
     ),
   );
 }

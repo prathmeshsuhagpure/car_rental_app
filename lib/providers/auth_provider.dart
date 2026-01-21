@@ -11,7 +11,7 @@ class AuthProvider with ChangeNotifier {
   String? _error;
   String? _token;
   bool _isLoading = false;
-  bool _isHost = false; // Add this line
+  bool _isHost = false;
 
   final ApiService _apiService = ApiService();
 
@@ -22,9 +22,12 @@ class AuthProvider with ChangeNotifier {
   static const String HOST_KEY = 'isHost';
 
   User? get user => _user;
+
   String? get error => _error;
+
   bool get isLoading => _isLoading;
-  bool get isHost => _isHost; // Add this getter
+
+  bool get isHost => _isHost;
 
   Future<void> _saveUserToStorage(User user) async {
     try {
@@ -37,28 +40,17 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Helper method to clear all user data
   Future<void> _clearAllData() async {
-    try {
-      // Clear SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(TOKEN_KEY);
-      await prefs.remove(LOGIN_KEY);
-      await prefs.remove(PHONE_KEY);
-      await prefs.remove(HOST_KEY); // Add this line
+    _user = null;
+    _token = null;
+    _isHost = false;
 
-      // Clear FlutterSecureStorage
-      await _secureStorage.delete(key: TOKEN_KEY);
-      await _secureStorage.delete(key: USER_KEY);
+    _apiService.setToken(null); // 🔥 MOST IMPORTANT
 
-      // Clear in-memory data
-      _user = null;
-      _token = null;
-      _error = null;
-      _isHost = false; // Add this line
-    } catch (e) {
-      debugPrint("Error clearing data: $e");
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    await _secureStorage.deleteAll();
   }
 
   // Send OTP using Twilio backend
@@ -87,28 +79,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /*Future<Map<String, dynamic>> sendOtpLogin(String fullPhone) async {
-    _error = null;
-    notifyListeners();
-
-    try {
-      final result = await _apiService.sendOTP(fullPhone);
-
-      if (result['success'] == true) {
-        // Don't save phone number yet, wait for successful verification
-        return {'success': true, 'message': result['message']};
-      } else {
-        _error = result['message'] ?? 'Login failed';
-        notifyListeners();
-        return {'success': false, 'message': _error};
-      }
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return {'success': false, 'message': _error};
-    }
-  }*/
-
   // Resend OTP using Twilio backend
   Future<Map<String, dynamic>> resendOtpLogin(String fullPhone) async {
     _error = null;
@@ -135,38 +105,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-
-  /*Future<Map<String, dynamic>> resendOtpLogin(String fullPhone) async {
-    _error = null;
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final result = await resendOtpLogin(fullPhone); // call Firebase resend method
-
-      _isLoading = false;
-      notifyListeners();
-
-      if (result['success'] == true) {
-        return {'success': true, 'message': result['message']};
-      } else {
-        _error = result['message'] ?? 'Resend OTP failed';
-        return {'success': false, 'message': _error!};
-      }
-    } catch (e) {
-      _isLoading = false;
-      _error = e.toString();
-      notifyListeners();
-      return {'success': false, 'message': _error!};
-    }
-  }*/
-
   // Verify OTP and login using Twilio backend
-  Future<Map<String, dynamic>> verifyOtpAndLogin(
-      String otp,
-      String phoneNumber, {
-        bool isHost = false
-      }) async {
+  Future<Map<String, dynamic>> verifyOtpAndLogin(String otp, String phoneNumber,
+      {bool isHost = false}) async {
     _error = null;
     _setLoading(true);
 
@@ -174,7 +115,8 @@ class AuthProvider with ChangeNotifier {
       await _clearAllData();
       notifyListeners();
 
-      final response = await _apiService.verifyOTP(otp, phoneNumber, isHost: isHost);
+      final response =
+          await _apiService.verifyOTP(otp, phoneNumber, isHost: isHost);
 
       if (response == null || response['success'] != true) {
         _error = response['message'] ?? 'OTP verification failed';
@@ -236,9 +178,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Modified method to include isHost parameter
-  /*Future<Map<String, dynamic>> verifyOtpAndLogin(String otp, String phoneNumber,
-      {bool isHost = false}) async {
+  // NEW: Sign up with email and password
+  Future<Map<String, dynamic>> signupWithEmail(
+    String name,
+    String email,
+    String password,
+    bool isHost,
+  ) async {
     _error = null;
     _setLoading(true);
 
@@ -246,17 +192,19 @@ class AuthProvider with ChangeNotifier {
       await _clearAllData();
       notifyListeners();
 
-      final response =
-          await _apiService.verifyOTP(otp, phoneNumber, isHost: isHost);
+      final response = await _apiService.signupWithEmail(
+        name: name,
+        email: email,
+        password: password,
+        isHost: isHost,
+      );
 
       if (response == null || response['success'] != true) {
-        _error = response['message'] ?? 'OTP verification failed';
-        print("response: ${response['message']}");
+        _error = response?['message'] ?? 'Signup failed';
         _setLoading(false);
         return {'success': false, 'message': _error!};
       }
 
-      print("token: ${response['token']}");
       _token = response['token'];
       if (_token == null) {
         _error = 'No token received';
@@ -271,21 +219,96 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(LOGIN_KEY, true);
       await prefs.setString(TOKEN_KEY, _token!);
-      await prefs.setString(PHONE_KEY, phoneNumber);
-      await prefs.setBool(HOST_KEY, _isHost); // Add this line
+      await prefs.setBool(HOST_KEY, _isHost);
 
       // Save to secure storage
       await _secureStorage.write(key: TOKEN_KEY, value: _token!);
+      _apiService.setToken(_token!);
 
-      // Fetch fresh user profile for the new user
-      final userProfile = await _apiService.getUserProfile();
+      // Fetch user profile
+      final userProfile = await _apiService.getUserProfile(forceRefresh: true);
       if (userProfile != null) {
         _user = userProfile;
         await _saveUserToStorage(userProfile);
         debugPrint(
-            "🟢 New ${_isHost ? 'host' : 'user'} logged in: ${_user?.name} - ${_user?.phoneNumber}");
+            "New ${_isHost ? 'host' : 'user'} signed up: ${_user?.name} - ${_user?.email}");
       } else {
-        // If we can't get user profile, clear everything and fail
+        await _clearAllData();
+        _error = 'Failed to fetch user profile';
+        _setLoading(false);
+        return {'success': false, 'message': _error!};
+      }
+
+      _setLoading(false);
+      notifyListeners();
+      return {
+        'success': true,
+        'message': response['message'] ?? 'Signup successful',
+        'isHost': _isHost
+      };
+    } catch (e) {
+      _error = e.toString();
+      await _clearAllData();
+      _setLoading(false);
+      notifyListeners();
+      return {'success': false, 'message': _error!};
+    }
+  }
+
+  // NEW: Login with email and password
+  Future<Map<String, dynamic>> loginWithEmail(
+    String email,
+    String password,
+    bool isHost,
+  ) async {
+    _error = null;
+    _setLoading(true);
+
+    try {
+      await _clearAllData();
+      notifyListeners();
+
+      final response = await _apiService.loginWithEmail(
+        email: email,
+        password: password,
+        isHost: isHost,
+      );
+
+      if (response == null || response['success'] != true) {
+        _error = response?['message'] ?? 'Login failed';
+        _setLoading(false);
+        return {'success': false, 'message': _error!};
+      }
+
+      _token = response['token'];
+      if (_token == null) {
+        _error = 'No token received';
+        _setLoading(false);
+        return {'success': false, 'message': _error!};
+      }
+
+      // Set host status
+      _isHost = response['isHost'] ?? isHost;
+
+      // Save token, login state, and host status
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(LOGIN_KEY, true);
+      await prefs.setString(TOKEN_KEY, _token!);
+      await prefs.setBool(HOST_KEY, _isHost);
+
+      // Save to secure storage
+      await _secureStorage.write(key: TOKEN_KEY, value: _token!);
+      _apiService.setToken(_token!);
+
+      // Fetch user profile
+      final userProfile = await _apiService.getUserProfile();
+      if (userProfile != null) {
+        _user = userProfile;
+        print(_user);
+        await _saveUserToStorage(userProfile);
+        debugPrint(
+            "${_isHost ? 'Host' : 'User'} logged in: ${_user?.name} - ${_user?.email}");
+      } else {
         await _clearAllData();
         _error = 'Failed to fetch user profile';
         _setLoading(false);
@@ -297,7 +320,7 @@ class AuthProvider with ChangeNotifier {
       return {
         'success': true,
         'message': response['message'] ?? 'Login successful',
-        'isHost': _isHost //
+        'isHost': _isHost
       };
     } catch (e) {
       _error = e.toString();
@@ -306,7 +329,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return {'success': false, 'message': _error!};
     }
-  }*/
+  }
 
   Future<bool> tryAutoLogin() async {
     try {
@@ -317,10 +340,10 @@ class AuthProvider with ChangeNotifier {
       _token ??= await _secureStorage.read(key: TOKEN_KEY);
 
       final isLoggedIn = prefs.getBool(LOGIN_KEY) ?? false;
-      _isHost = prefs.getBool(HOST_KEY) ?? false; // Add this line
+      _isHost = prefs.getBool(HOST_KEY) ?? false;
 
       debugPrint("🟡 isLoggedIn: $isLoggedIn");
-      debugPrint("🟡 isHost: $_isHost"); // Add this line
+      debugPrint("🟡 isHost: $_isHost");
       debugPrint("🟡 token in autoLogin: $_token");
 
       if (!isLoggedIn || _token == null) {
@@ -358,24 +381,20 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> logout() async {
     _setLoading(true);
+
     try {
-      // Call API logout
+      // Call API logout (best-effort)
       await _apiService.logout();
-
-      // Clear all data
-      await _clearAllData();
-
-      _setLoading(false);
-      notifyListeners();
-      return true;
     } catch (e) {
-      debugPrint("Error during logout: $e");
-      // Even if API call fails, clear local data
-      await _clearAllData();
-      _setLoading(false);
-      notifyListeners();
-      return true; // Return true because we cleared local data
+      debugPrint("API logout error (ignored): $e");
     }
+
+    // 🔥 ALWAYS clear local state
+    await _clearAllData();
+
+    _setLoading(false);
+    notifyListeners();
+    return true;
   }
 
   Future<bool> updateProfile(Map<String, dynamic> userData) async {
@@ -406,7 +425,8 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> verifyUserProfile(String phoneNumber, String otp) async {
+  Future<Map<String, dynamic>> verifyUserProfile(
+      String phoneNumber, String otp) async {
     _error = null;
     _setLoading(true);
 
@@ -439,7 +459,6 @@ class AuthProvider with ChangeNotifier {
       return {'success': false, 'message': _error!};
     }
   }
-
 
   void _setLoading(bool loading) {
     _isLoading = loading;

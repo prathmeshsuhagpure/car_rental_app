@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
@@ -11,6 +12,7 @@ import 'package:path/path.dart' as path;
 class ApiService {
   static String? baseUrl = ApiConstants.baseUrl;
   final _secureStorage = const FlutterSecureStorage();
+
   String? _token;
   User? _cachedUserProfile;
 
@@ -19,8 +21,9 @@ class ApiService {
     _cachedUserProfile = null;
   }
 
-  void setToken(String token) {
+  void setToken(String? token) {
     _token = token;
+    _cachedUserProfile = null;
   }
 
   Future<User?> getUserProfile({bool forceRefresh = false}) async {
@@ -29,7 +32,7 @@ class ApiService {
       _cachedUserProfile = null;
     }
 
-    if (_cachedUserProfile != null && !forceRefresh) {
+    if (_cachedUserProfile != null) {
       return _cachedUserProfile;
     }
 
@@ -43,16 +46,13 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final user = User.fromJson(data['user'] ?? data);
+        print(user);
 
-        // Only cache if not force refresh
-        if (!forceRefresh) {
-          _cachedUserProfile = user;
-        }
+        _cachedUserProfile = user;
 
         return user;
-      } else {
-        return null;
       }
+      return null;
     } catch (e) {
       throw Exception('Error fetching user profile : $e');
     }
@@ -60,9 +60,7 @@ class ApiService {
 
   Future<String?> _getToken() async {
     if (_token != null) return _token;
-    _token = await _secureStorage.read(
-        key:
-            'auth_token'); // Make sure your token is stored with this exact key
+    _token = await _secureStorage.read(key: 'auth_token');
     return _token;
   }
 
@@ -143,10 +141,10 @@ class ApiService {
 
   // Verify OTP using Twilio backend
   Future<Map<String, dynamic>> verifyOTP(
-      String otp,
-      String phoneNumber, {
-        bool isHost = false,
-      }) async {
+    String otp,
+    String phoneNumber, {
+    bool isHost = false,
+  }) async {
     try {
       final headers = await getHeaders();
       final requestBody = {
@@ -188,7 +186,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyUserAccount(String phoneNumber, String otp) async {
+  Future<Map<String, dynamic>> verifyUserAccount(
+      String phoneNumber, String otp) async {
     try {
       final headers = await getHeaders();
       final response = await http.post(
@@ -429,7 +428,11 @@ class ApiService {
       }
 
       // Mapping images to appropriate field names
-      List<String> fieldNames = ["profilePicture", "driverLicense", "identityProof"];
+      List<String> fieldNames = [
+        "profilePicture",
+        "driverLicense",
+        "identityProof"
+      ];
 
       for (int i = 0; i < imageFiles.length; i++) {
         if (i < fieldNames.length) {
@@ -451,7 +454,7 @@ class ApiService {
         return {
           'success': true,
           'message': decoded['message'],
-          'uploadedFiles': decoded['uploadedFiles'], // Adjust based on API response
+          'uploadedFiles': decoded['uploadedFiles'],
         };
       } else {
         return {
@@ -467,10 +470,9 @@ class ApiService {
     }
   }
 
-
   Future<Map<String, dynamic>> logout() async {
     try {
-      if (_token != null) {
+      if (_token != null && _token!.isNotEmpty) {
         await http.post(
           Uri.parse('$baseUrl/logout'),
           headers: {
@@ -480,10 +482,11 @@ class ApiService {
         );
       }
     } catch (e) {
-      throw Exception('Error while trying to logout: $e');
+      debugPrint("Logout API failed: $e");
+      // Do NOT throw — logout must continue locally
     } finally {
-      // Always clear local data
-      clearToken();
+      // Only clear API-level memory
+      _token = null;
     }
 
     return {'success': true};
@@ -531,6 +534,94 @@ class ApiService {
       }
     } catch (e) {
       print('❌ Error sending FCM token: $e');
+    }
+  }
+
+// Sign up with email and password
+  Future<Map<String, dynamic>?> signupWithEmail({
+    required String name,
+    required String email,
+    required String password,
+    required bool isHost,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl${ApiConstants.signup}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'isHost': isHost,
+        }),
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'token': data['token'],
+          'isHost': data['isHost'] ?? isHost,
+          'message': data['message'] ?? 'Signup successful',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Signup failed',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error in signupWithEmail: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+// Login with email and password
+  Future<Map<String, dynamic>?> loginWithEmail({
+    required String email,
+    required String password,
+    required bool isHost,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl${ApiConstants.login}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'isHost': isHost,
+        }),
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'token': data['token'],
+          'isHost': data['isHost'] ?? isHost,
+          'message': data['message'] ?? 'Login successful',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Login failed',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error in loginWithEmail: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
     }
   }
 }
