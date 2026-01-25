@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
-import '../home/host_home_screen.dart';
+import '../host_screens/host_home_screen.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
@@ -17,10 +17,10 @@ class OTPScreen extends StatefulWidget {
   });
 
   @override
-  _OTPScreenState createState() => _OTPScreenState();
+  OTPScreenState createState() => OTPScreenState();
 }
 
-class _OTPScreenState extends State<OTPScreen> {
+class OTPScreenState extends State<OTPScreen> {
   final List<TextEditingController> _otpControllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
@@ -53,7 +53,7 @@ class _OTPScreenState extends State<OTPScreen> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -86,7 +86,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4A7C59).withOpacity(0.3),
+                    color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -148,10 +148,10 @@ class _OTPScreenState extends State<OTPScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A7C59).withOpacity(0.1),
+                  color: const Color(0xFF4A7C59).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: const Color(0xFF4A7C59).withOpacity(0.3),
+                    color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
                   ),
                 ),
                 child: const Row(
@@ -189,7 +189,7 @@ class _OTPScreenState extends State<OTPScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -251,7 +251,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4A7C59).withOpacity(0.3),
+                    color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -298,7 +298,9 @@ class _OTPScreenState extends State<OTPScreen> {
                     isHost: widget.isHost, // Pass the host status
                   );
 
+
                   Navigator.of(context).pop();
+
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

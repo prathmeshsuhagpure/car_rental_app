@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/car_model.dart';
+import '../providers/favourites_provider.dart';
 import '../screens/car/car_detail_screen.dart';
 
 class EnhancedCarCard extends StatefulWidget {
@@ -20,14 +24,13 @@ class EnhancedCarCard extends StatefulWidget {
   });
 
   @override
-  _EnhancedCarCardState createState() => _EnhancedCarCardState();
+  EnhancedCarCardState createState() => EnhancedCarCardState();
 }
 
-class _EnhancedCarCardState extends State<EnhancedCarCard>
+class EnhancedCarCardState extends State<EnhancedCarCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -72,11 +75,12 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => CarDetailScreen(
-                          car: car,
-                          startDate: widget.startDate,
-                          endDate: widget.endDate,
-                        ),),
+                  builder: (context) => CarDetailScreen(
+                    car: car,
+                    startDate: widget.startDate,
+                    endDate: widget.endDate,
+                  ),
+                ),
               );
             },
             child: Container(
@@ -85,7 +89,7 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   )
@@ -100,13 +104,12 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(16)),
                         child: Container(
-                          height: 135, //135
+                          height: 135,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            image: car.images != null &&
-                                    car.images.isNotEmpty
+                            image: car.images != null && car.images.isNotEmpty
                                 ? DecorationImage(
-                                    image: AssetImage(car.images[0]),
+                                    image: FileImage(File(car.images[0])),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
@@ -116,8 +119,7 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                               end: Alignment.bottomCenter,
                             ),
                           ),
-                          child: car.images == null ||
-                                  car.images.isEmpty
+                          child: car.images == null || car.images.isEmpty
                               ? Icon(
                                   Icons.car_rental,
                                   size: 60,
@@ -157,28 +159,33 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                       Positioned(
                         top: 8,
                         right: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isFavorite = !_isFavorite;
-                            });
-                            HapticFeedback.lightImpact();
+                        child: Consumer<FavoritesProvider>(
+                          builder: (context, favProvider, _) {
+                            final isFavorite = favProvider.isFavorite(car.id);
+
+                            return GestureDetector(
+                              onTap: () {
+                                favProvider.toggleFavorite(car.id);
+                                HapticFeedback.lightImpact();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite
+                                      ? Colors.red
+                                      : Colors.grey[600],
+                                  size: 18,
+                                ),
+                              ),
+                            );
                           },
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color:
-                                  _isFavorite ? Colors.red : Colors.grey[600],
-                              size: 18,
-                            ),
-                          ),
                         ),
                       ),
                       if (car.originalPrice != null)
@@ -232,7 +239,7 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                         Row(
                           children: [
                             Text(
-                              "₹${(car.pricePerDay).toString()} / day",
+                              "₹${(car.originalPrice).toString()} / day",
                               style: const TextStyle(
                                 color: Color(0xFF0A5525),
                                 fontWeight: FontWeight.bold,
@@ -268,13 +275,13 @@ class _EnhancedCarCardState extends State<EnhancedCarCard>
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                car.location ?? "",
+                                car.location.address ?? "",
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 12,
                                 ),
                                 overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                maxLines: 1,
                               ),
                             ),
                           ],

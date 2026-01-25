@@ -269,7 +269,6 @@ class DateTimeSelectionService extends ChangeNotifier {
       final String formattedTime = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
       return "$formattedDate at $formattedTime";
     } catch (e) {
-      print('Error formatting date time: $e');
       return 'Invalid Date';
     }
   }

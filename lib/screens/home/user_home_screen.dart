@@ -8,6 +8,7 @@ import '../booking/booking_history_screen.dart';
 import '../booking/booking_screen.dart';
 import '../car/car_detail_screen.dart';
 import '../car/car_list_screen.dart';
+import '../favourite_cars/favourite_cars_screen.dart';
 import '../notification/notification_screen.dart';
 
 class HomeContent extends StatefulWidget {
@@ -19,6 +20,17 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   String selectedCity = 'Nagpur';
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CarProvider>().loadCars(context);
+    });
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +94,6 @@ class _HomeContentState extends State<HomeContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // City Selector
               InkWell(
                 onTap: () => showCitySelectionSheet(context),
                 borderRadius: BorderRadius.circular(12),
@@ -131,7 +142,6 @@ class _HomeContentState extends State<HomeContent> {
 
               const SizedBox(height: 24),
 
-              // Welcome Section
               Container(
                 padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
@@ -202,7 +212,6 @@ class _HomeContentState extends State<HomeContent> {
 
               const SizedBox(height: 32),
 
-              // Quick Actions
               Text(
                 'Quick Actions',
                 style: const TextStyle(
@@ -246,17 +255,17 @@ class _HomeContentState extends State<HomeContent> {
                     icon: Icons.favorite,
                     label: 'Favorites',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Favorites coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FavoritesScreen(),
+                        ),
                       );
                     },
                   ),
                 ],
               ),
-
               const SizedBox(height: 32),
-
-              // Featured Cars
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -337,7 +346,6 @@ class _HomeContentState extends State<HomeContent> {
                           final DateTime now = DateTime.now();
                           final DateTime defaultEndDate =
                               now.add(const Duration(hours: 4));
-
                           return Container(
                             width: 200,
                             margin: const EdgeInsets.only(right: 16),

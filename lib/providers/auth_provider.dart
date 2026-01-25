@@ -23,12 +23,19 @@ class AuthProvider with ChangeNotifier {
   static const String HOST_KEY = 'isHost';
 
   User? get user => _user;
+  String? get token => _token;
 
   String? get error => _error;
 
   bool get isLoading => _isLoading;
 
   bool get isHost => _isHost;
+
+  void setVerified(bool value) {
+    if (user == null) return;
+    _user = user!.copyWith(isVerified: value);
+    notifyListeners();
+  }
 
   Future<void> _saveUserToStorage(User user) async {
     try {
@@ -49,7 +56,11 @@ class AuthProvider with ChangeNotifier {
     _apiService.setToken(null); // 🔥 MOST IMPORTANT
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    //await prefs.clear();
+    await prefs.remove('auth_token');
+    await prefs.remove('refresh_token');
+    await prefs.remove('is_host');
+    await prefs.remove('user_id');
 
     await _secureStorage.deleteAll();
   }
@@ -121,12 +132,10 @@ class AuthProvider with ChangeNotifier {
 
       if (response == null || response['success'] != true) {
         _error = response['message'] ?? 'OTP verification failed';
-        print("response: ${response['message']}");
         _setLoading(false);
         return {'success': false, 'message': _error!};
       }
 
-      print("token: ${response['token']}");
       _token = response['token'];
       if (_token == null) {
         _error = 'No token received';
@@ -305,7 +314,6 @@ class AuthProvider with ChangeNotifier {
       final userProfile = await _apiService.getUserProfile();
       if (userProfile != null) {
         _user = userProfile;
-        print(_user);
         await _saveUserToStorage(userProfile);
         debugPrint(
             "${_isHost ? 'Host' : 'User'} logged in: ${_user?.name} - ${_user?.email}");
@@ -337,43 +345,30 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _token = prefs.getString(TOKEN_KEY);
 
-      // Fallback to secure storage if not in prefs
       _token ??= await _secureStorage.read(key: TOKEN_KEY);
 
       final isLoggedIn = prefs.getBool(LOGIN_KEY) ?? false;
       _isHost = prefs.getBool(HOST_KEY) ?? false;
 
-      debugPrint("🟡 isLoggedIn: $isLoggedIn");
-      debugPrint("🟡 isHost: $_isHost");
-      debugPrint("🟡 token in autoLogin: $_token");
-
       if (!isLoggedIn || _token == null) {
-        // Clear any residual data
         await _clearAllData();
         return false;
       }
 
       _apiService.setToken(_token!);
 
-      // Try to fetch fresh user profile
       final userProfile = await _apiService.getUserProfile();
-      debugPrint("🟢 userProfile retrieved: ${userProfile?.name}");
 
       if (userProfile != null) {
         _user = userProfile;
         await _saveUserToStorage(userProfile);
-        debugPrint(
-            "🟢 Auto-login successful for ${_isHost ? 'host' : 'user'}: ${_user?.name}");
         notifyListeners();
         return true;
       } else {
-        // If can't fetch profile, clear everything
-        debugPrint("🔴 Failed to fetch user profile during auto-login");
         await _clearAllData();
         return false;
       }
     } catch (e) {
-      debugPrint("🔴 Error in tryAutoLogin: $e");
       _error = e.toString();
       await _clearAllData();
       return false;
@@ -435,7 +430,6 @@ class AuthProvider with ChangeNotifier {
       final response = await _apiService.verifyUserAccount(phoneNumber, otp);
 
       if (response['success'] == true) {
-        // Optionally update the local user object if you track isVerified
         if (_user != null) {
           _user = _user!.copyWith(isVerified: true);
           await _saveUserToStorage(_user!);
@@ -466,7 +460,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Add this method to force clear all data (useful for debugging)
   Future<void> forceLogout() async {
     await _clearAllData();
     notifyListeners();

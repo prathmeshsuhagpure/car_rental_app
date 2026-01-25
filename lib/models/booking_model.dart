@@ -7,12 +7,11 @@ class BookingModel {
   final String carId;
   final String carName;
   final double amount;
-  final String pickupLocation;
-  final String dropoffLocation;
+  final String pickUpLocation;
+  final String dropOffLocation;
   final DateTime startDate;
   final DateTime endDate;
   final double rating;
-  final int trips;
   final String paymentStatus;
   final String bookingStatus;
   final String bookingId;
@@ -30,12 +29,11 @@ class BookingModel {
     required this.carId,
     required this.carName,
     required this.amount,
-    required this.pickupLocation,
-    required this.dropoffLocation,
+    required this.pickUpLocation,
+    required this.dropOffLocation,
     required this.startDate,
     required this.endDate,
     required this.rating,
-    required this.trips,
     required this.paymentStatus,
     required this.bookingStatus,
     this.createdAt,
@@ -56,14 +54,13 @@ class BookingModel {
       carId: json['carId'],
       carName: json['carName'],
       amount: (json['totalPrice'] ?? json['amount'] ?? 0).toDouble(),
-      pickupLocation: json['pickupLocation']?.toString() ?? '',
-      dropoffLocation: json['dropoffLocation']?.toString() ?? '',
+      pickUpLocation: json['pickupLocation']?.toString() ?? '',
+      dropOffLocation: json['dropoffLocation']?.toString() ?? '',
       startDate: DateTime.tryParse(json['startDate']?.toString() ?? '') ??
           DateTime.now(),
       endDate: DateTime.tryParse(json['endDate']?.toString() ?? '') ??
           DateTime.now(),
       rating: (json['rating'] ?? 0).toDouble(),
-      trips: json['trips'] ?? 0,
       paymentStatus: json['paymentStatus']?.toString() ?? 'pending',
       bookingStatus: json['bookingStatus']?.toString() ?? 'pending',
       createdAt: json['createdAt']?.toString(),
@@ -85,12 +82,11 @@ class BookingModel {
       'carId': carId,
       'carName': carName,
       'amount': amount,
-      'pickupLocation': pickupLocation,
-      'dropoffLocation': dropoffLocation,
+      'pickupLocation': pickUpLocation,
+      'dropoffLocation': dropOffLocation,
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
       'rating': rating,
-      'trips': trips,
       'paymentStatus': paymentStatus,
       'bookingStatus': bookingStatus,
       'createdAt': createdAt,

@@ -1,12 +1,13 @@
 import 'package:car_rent_app/utils/theme.dart';
-import 'package:car_rent_app/widgets/car_info_card.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/car_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/review_provider.dart';
 import '../../utils/date_time_selection.dart';
 import '../../widgets/full_screen_image_viewer.dart';
+import '../../widgets/show_add_review_dialog.dart';
 import '../payment/payment_screen.dart';
 
 class CarDetailScreen extends StatefulWidget {
@@ -26,16 +27,15 @@ class CarDetailScreen extends StatefulWidget {
   });
 
   @override
-  _CarDetailScreenState createState() => _CarDetailScreenState();
+  CarDetailScreenState createState() => CarDetailScreenState();
 }
 
-class _CarDetailScreenState extends State<CarDetailScreen>
+class CarDetailScreenState extends State<CarDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
   final DateTimeSelectionService _dateTimeService = DateTimeSelectionService();
 
-  // Keys for each section to track their positions
   final List<GlobalKey> _sectionKeys = List.generate(6, (index) => GlobalKey());
 
   final List<String> _tabTitles = [
@@ -51,23 +51,27 @@ class _CarDetailScreenState extends State<CarDetailScreen>
   void initState() {
     super.initState();
 
-    // Set the service values with the passed parameters
-    if (widget.startDate != null) {
-      _dateTimeService.tripStartDate = widget.startDate!;
-    }
-    if (widget.startTime != null) {
-      _dateTimeService.tripStartTime = widget.startTime!;
-    }
-    if (widget.endDate != null) {
-      _dateTimeService.tripEndDate = widget.endDate!;
-    }
-    if (widget.endTime != null) {
-      _dateTimeService.tripEndTime = widget.endTime!;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dateTimeService = context.read<DateTimeSelectionService>();
+
+      if (widget.startDate != null) {
+        dateTimeService.tripStartDate = widget.startDate!;
+      }
+      if (widget.startTime != null) {
+        dateTimeService.tripStartTime = widget.startTime!;
+      }
+      if (widget.endDate != null) {
+        dateTimeService.tripEndDate = widget.endDate!;
+      }
+      if (widget.endTime != null) {
+        dateTimeService.tripEndTime = widget.endTime!;
+      }
+
+      context.read<ReviewProvider>().fetchReviews(widget.car.id);
+    });
 
     _tabController = TabController(length: 6, vsync: this);
-    _scrollController = ScrollController();
-    _scrollController.addListener(_onScroll);
+    _scrollController = ScrollController()..addListener(_onScroll);
   }
 
   @override
@@ -92,7 +96,6 @@ class _CarDetailScreenState extends State<CarDetailScreen>
       }
     }
 
-    // Update tab selection if different
     if (_tabController.index != activeIndex) {
       _tabController.animateTo(activeIndex);
     }
@@ -133,7 +136,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -175,7 +178,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -186,7 +189,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                       color: Colors.black87, size: 22),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Vehicle added to wishlist"),
+                      content: Text("Vehicle added to favourites"),
                       behavior: SnackBarBehavior.floating,
                       duration: Duration(seconds: 1),
                     ));
@@ -200,7 +203,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -215,12 +218,10 @@ class _CarDetailScreenState extends State<CarDetailScreen>
             ],
           ),
 
-          // Car Info Card
-          SliverToBoxAdapter(
+          /*SliverToBoxAdapter(
             child: CarInfoCard(car: widget.car),
-          ),
+          ),*/
 
-          // Sticky Tab Bar
           SliverPersistentHeader(
             pinned: true,
             delegate: _SliverTabBarDelegate(
@@ -232,7 +233,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -267,7 +268,6 @@ class _CarDetailScreenState extends State<CarDetailScreen>
     );
   }
 
-
   Widget _buildSection(int index, String title) {
     return Container(
       key: _sectionKeys[index],
@@ -278,7 +278,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -330,23 +330,22 @@ class _CarDetailScreenState extends State<CarDetailScreen>
               borderRadius: BorderRadius.circular(16),
               image: widget.car.images.isNotEmpty
                   ? DecorationImage(
-                image: NetworkImage(widget.car.images[0]),
-                fit: BoxFit.cover,
-              )
+                      image: NetworkImage(widget.car.images[0]),
+                      fit: BoxFit.cover,
+                    )
                   : null,
             ),
             child: widget.car.images.isEmpty
                 ? const Center(
-              child: Icon(Icons.directions_car, size: 60, color: Colors.grey),
-            )
+                    child: Icon(Icons.directions_car,
+                        size: 60, color: Colors.grey),
+                  )
                 : null,
           ),
         ),
         const SizedBox(height: 16),
 
-        // Photo grid - show only if there are images
         if (widget.car.images.isNotEmpty) ...[
-          // If there are more than 1 image, show grid
           if (widget.car.images.length > 1)
             GridView.builder(
               shrinkWrap: true,
@@ -357,9 +356,12 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.5,
               ),
-              itemCount: widget.car.images.length > 5 ? 4 : widget.car.images.length - 1,
+              itemCount: widget.car.images.length > 5
+                  ? 4
+                  : widget.car.images.length - 1,
               itemBuilder: (context, index) {
-                int imageIndex = index + 1; // Skip first image as it's shown above
+                int imageIndex =
+                    index + 1; // Skip first image as it's shown above
                 bool isLastItem = index == 3 && widget.car.images.length > 5;
 
                 return GestureDetector(
@@ -377,21 +379,21 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                     ),
                     child: isLastItem
                         ? Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '+${widget.car.images.length - 4} more',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    )
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '+${widget.car.images.length - 4} more',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          )
                         : null,
                   ),
                 );
@@ -412,7 +414,8 @@ class _CarDetailScreenState extends State<CarDetailScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.photo_library_outlined, size: 30, color: Colors.grey),
+                  Icon(Icons.photo_library_outlined,
+                      size: 30, color: Colors.grey),
                   SizedBox(height: 8),
                   Text(
                     'No images available',
@@ -551,9 +554,9 @@ class _CarDetailScreenState extends State<CarDetailScreen>
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Based on 11 reviews',
-              style: TextStyle(
+            Text(
+              'Based on ${widget.car.reviews} reviews',
+              style: const TextStyle(
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
@@ -561,74 +564,92 @@ class _CarDetailScreenState extends State<CarDetailScreen>
           ],
         ),
         const SizedBox(height: 20),
-        ...List.generate(3, (index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFF3B82F6),
-                      child: Text(
-                        'U${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+        ...List.generate(
+          3,
+          (index) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFF3B82F6),
+                        child: Text(
+                          'U${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'User ${index + 1}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'User ${index + 1}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
-                          ),
-                          Row(
-                            children: List.generate(
+                            Row(
+                              children: List.generate(
                                 5,
                                 (i) => Icon(
-                                      Icons.star,
-                                      size: 14,
-                                      color: i < 4
-                                          ? Colors.amber
-                                          : Colors.grey[300],
-                                    ),),
-                          ),
-                        ],
+                                  Icons.star,
+                                  size: 14,
+                                  color:
+                                      i < 4 ? Colors.amber : Colors.grey[300],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  index == 0
-                      ? 'Excellent car condition and very responsive host!'
-                      : index == 1
-                          ? 'Great experience, would book again.'
-                          : 'Clean car and pickup was on time.',
-                  style: const TextStyle(
-                    color: Color(0xFF475569),
-                    fontSize: 14,
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    index == 0
+                        ? 'Excellent car condition and very responsive host!'
+                        : index == 1
+                            ? 'Great experience, would book again.'
+                            : 'Clean car and pickup was on time.',
+                    style: const TextStyle(
+                      color: Color(0xFF475569),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        ElevatedButton.icon(
+          onPressed: () {
+            showAddReviewDialog(context, widget.car);
+          },
+          icon: const Icon(Icons.add_comment, size: 18),
+          label: const Text('Add Your Review'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3B82F6),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        }),
+          ),
+        ),
       ],
     );
   }
@@ -661,7 +682,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                widget.car.distance,
+                widget.car.formattedDistance,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -681,76 +702,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
         ),
       ],
     );
-  } /*Widget _buildLocationTab() {
-  final double latitude = widget.car.latitude;
-  final double longitude = widget.car.longitude;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      GestureDetector(
-        onTap: () async {
-          final url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-          if (await canLaunchUrl(Uri.parse(url))) {
-            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-          }
-        },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            height: 200,
-            width: double.infinity,
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(latitude, longitude),
-                zoom: 14,
-              ),
-              markers: {
-                Marker(
-                  markerId: const MarkerId('car_location'),
-                  position: LatLng(latitude, longitude),
-                ),
-              },
-              zoomControlsEnabled: false,
-              liteModeEnabled: true, // Faster and lightweight
-              onTap: (_) async {
-                final url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-                if (await canLaunchUrl(Uri.parse(url))) {
-                  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                }
-              },
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 16),
-      Row(
-        children: [
-          const Icon(Icons.location_on, color: Color(0xFF3B82F6)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              widget.car.distance,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 12),
-      const Text(
-        'The exact location will be shared after booking confirmation.',
-        style: TextStyle(
-          color: Color(0xFF64748B),
-          fontSize: 14,
-        ),
-      ),
-    ],
-  );
-}*/
+  }
 
   Widget _buildBenefitsTab() {
     final benefits = [
@@ -796,7 +748,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -900,7 +852,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -924,7 +876,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₹${widget.car.pricePerDay}',
+                    '₹${widget.car.originalPrice}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -946,8 +898,8 @@ class _CarDetailScreenState extends State<CarDetailScreen>
                         user: currentUser!,
                         startDate: _dateTimeService.tripStartDate,
                         endDate: _dateTimeService.tripEndDate,
-                        pickupLocation: widget.car.location,
-                        dropoffLocation: widget.car.location,
+                        pickUpLocation: widget.car.location.address,
+                        dropOffLocation: widget.car.location.address,
                       ),
                     ),
                   );
@@ -976,6 +928,7 @@ class _CarDetailScreenState extends State<CarDetailScreen>
     );
   }
 }
+
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
 
@@ -983,11 +936,13 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent => _tabBar.preferredSize.height;
+
   @override
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       color: const Color(0xFFF8FAFC), // Match background color
@@ -1003,6 +958,6 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }
-

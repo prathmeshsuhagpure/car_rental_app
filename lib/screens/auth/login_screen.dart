@@ -78,7 +78,7 @@ class LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF059669).withOpacity(0.4),
+            color: const Color(0xFF059669).withValues(alpha: 0.4),
             blurRadius: 25,
             offset: const Offset(0, 12),
           ),
@@ -116,12 +116,12 @@ class LoginScreenState extends State<LoginScreen> {
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFF334155).withOpacity(0.3),
+          color: const Color(0xFF334155).withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 40,
             offset: const Offset(0, 20),
           ),
@@ -251,7 +251,7 @@ class LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF334155).withOpacity(0.5),
+        color: const Color(0xFF334155).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isHost ? const Color(0xFF059669) : const Color(0xFF475569),
@@ -329,6 +329,7 @@ class LoginScreenState extends State<LoginScreen> {
           });
 
           if (result["success"]) {
+            if (!mounted) return;
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -345,6 +346,7 @@ class LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else {
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text("Failed to send OTP"),
@@ -362,7 +364,7 @@ class LoginScreenState extends State<LoginScreen> {
           ),
           elevation: 0,
           disabledBackgroundColor: const Color(0xFF475569),
-          shadowColor: const Color(0xFF059669).withOpacity(0.5),
+          shadowColor: const Color(0xFF059669).withValues(alpha: 0.5),
         ),
         child: _isLoading
             ? const SizedBox(
@@ -449,7 +451,7 @@ class LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          backgroundColor: const Color(0xFF059669).withOpacity(0.1),
+          backgroundColor: const Color(0xFF059669).withValues(alpha: 0.1),
         ),
       ),
     );

@@ -7,7 +7,6 @@ Future<void> showCustomMonthYearPicker(BuildContext context, TextEditingControll
 
   // Modern color scheme
   const Color primaryGreen = Color(0xFF2E7D32);
-  const Color lightGreen = Color(0xFF4CAF50);
   const Color backgroundColor = Color(0xFFF8FAF9);
   const Color cardBackground = Colors.white;
   const Color textPrimary = Color(0xFF1A1A1A);
@@ -33,7 +32,7 @@ Future<void> showCustomMonthYearPicker(BuildContext context, TextEditingControll
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -49,7 +48,7 @@ Future<void> showCustomMonthYearPicker(BuildContext context, TextEditingControll
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: primaryGreen.withOpacity(0.1),
+                          color: primaryGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -219,9 +218,9 @@ Future<void> showCustomMonthYearPicker(BuildContext context, TextEditingControll
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: primaryGreen.withOpacity(0.05),
+                      color: primaryGreen.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: primaryGreen.withOpacity(0.2)),
+                      border: Border.all(color: primaryGreen.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -8,7 +8,7 @@ import '../models/notification_model.dart';
 
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("Handling a background message: ${message.messageId}");
+  debugPrint("Handling a background message: ${message.messageId}");
 }
 
 class NotificationService {
@@ -47,7 +47,7 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('✅ Notification permission granted');
+      debugPrint('✅ Notification permission granted');
     }
 
     const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@drawable/ic_notification');
@@ -66,13 +66,11 @@ class NotificationService {
     _fcmToken = await _firebaseMessaging.getToken();
     if (_fcmToken != null) {
       await _apiService.sendFCMTokenToBackend(_fcmToken!);
-      print("✅ FCM Token: $_fcmToken");
     }
 
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       _fcmToken = newToken;
       await _apiService.sendFCMTokenToBackend(newToken);
-      print("🔁 Token refreshed and updated.");
     });
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -212,8 +210,7 @@ class NotificationService {
 
   void _onNotificationTapped(NotificationResponse response) {
     if (response.payload != null) {
-      final data = jsonDecode(response.payload!);
-      print('Notification tapped: $data');
+      jsonDecode(response.payload!);
     }
   }
 

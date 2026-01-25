@@ -2,9 +2,7 @@ import 'package:car_rent_app/utils/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
 import '../providers/auth_provider.dart';
-import 'bottom_navigation_bar.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -35,7 +33,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -43,10 +41,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         child: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: textPrimary, size: 20),
-          onPressed: () => Navigator.pushReplacement(
+          onPressed:
+              () => /*Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => UserHomeScreen()),
-          ),
+          ),*/
+                  Navigator.pop(context),
         ),
       ),
       title: Text(
@@ -66,7 +66,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),

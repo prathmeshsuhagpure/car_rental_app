@@ -53,7 +53,7 @@ class PriceBreakupSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D57).withOpacity(0.1),
+                    color: const Color(0xFF2E7D57).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -186,12 +186,12 @@ class PriceBreakupSheet extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isHighlighted
-            ? const Color(0xFF2E7D57).withOpacity(0.08)
+            ? const Color(0xFF2E7D57).withValues(alpha: 0.08)
             : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: isHighlighted
             ? Border.all(
-          color: const Color(0xFF2E7D57).withOpacity(0.2),
+          color: const Color(0xFF2E7D57).withValues(alpha: 0.2),
           width: 1,
         )
             : null,
@@ -202,7 +202,7 @@ class PriceBreakupSheet extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isHighlighted
-                  ? const Color(0xFF2E7D57).withOpacity(0.1)
+                  ? const Color(0xFF2E7D57).withValues(alpha: 0.1)
                   : Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),

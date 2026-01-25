@@ -93,7 +93,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                             selectedFilter = filter;
                           });
                         },
-                        selectedColor: primaryGreen.withOpacity(0.3),
+                        selectedColor: primaryGreen.withValues(alpha: 0.3),
                         checkmarkColor: primaryGreen,
                         labelStyle: TextStyle(
                           color: isSelected ? primaryGreen : Colors.grey[800],
@@ -305,8 +305,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                 _buildDetailRow(
                     'Amount', '₹${booking.amount.toStringAsFixed(0)}'),
                 _buildDetailRow('Duration', _dateTimeService.durationFormatted),
-                _buildDetailRow('Pickup', booking.pickupLocation),
-                _buildDetailRow('Drop-off', booking.dropoffLocation),
+                _buildDetailRow('Pickup', booking.pickUpLocation),
+                _buildDetailRow('Drop-off', booking.dropOffLocation),
                 _buildDetailRow('Start Date', booking.formattedStartDate),
                 _buildDetailRow('End Date', booking.formattedEndDate),
                 _buildDetailRow('Booking Date', booking.formattedBookingDate),
@@ -397,6 +397,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       await bookingProvider.cancelBooking(booking.id);
       await Future.delayed(const Duration(seconds: 1));
 
+      if (!mounted) return;
       Navigator.pop(context);
 
       _showSuccessSnackBar('Booking cancelled successfully');

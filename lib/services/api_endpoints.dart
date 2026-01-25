@@ -2,7 +2,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConstants {
   static final String baseUrl = dotenv.env['BASE_URL'] ?? 'http://localhost';
-  //static String get baseUrl => dotenv.env['https://car-rent-server.netlify.app/.netlify/functions/index'] ??'http://172.16.99.202:5000';
 
   // Auth endpoints
   static const getUserprofile = '/api/auth/get-user-profile';
@@ -35,4 +34,8 @@ class ApiConstants {
   static String getBooking(String id) => '$baseUrl/bookings/$id';
   static String cancelBooking(String id) => '$baseUrl/bookings/$id/cancel';
   static const allBookings = '/api/bookings/all';
+
+  // Review Routes
+  static const submitReview = '/api/review';
+  static const fetchReviews = '/api/reviews';
 }

@@ -5,21 +5,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
 import '../models/car_model.dart';
+import '../models/review_model.dart';
 import '../models/user_model.dart';
 import 'api_endpoints.dart';
 import 'package:path/path.dart' as path;
 
 class ApiService {
-  static String? baseUrl = ApiConstants.baseUrl;
+  final String? baseUrl = ApiConstants.baseUrl;
   final _secureStorage = const FlutterSecureStorage();
 
   String? _token;
   User? _cachedUserProfile;
 
-  void clearToken() {
+  /*void clearToken() {
     _token = null;
     _cachedUserProfile = null;
-  }
+  }*/
 
   void setToken(String? token) {
     _token = token;
@@ -46,7 +47,6 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final user = User.fromJson(data['user'] ?? data);
-        print(user);
 
         _cachedUserProfile = user;
 
@@ -58,14 +58,14 @@ class ApiService {
     }
   }
 
-  Future<String?> _getToken() async {
+  Future<String?> getToken() async {
     if (_token != null) return _token;
     _token = await _secureStorage.read(key: 'auth_token');
     return _token;
   }
 
   Future<Map<String, String>> getHeaders() async {
-    final token = await _getToken();
+    final token = await getToken();
 
     final headers = {
       'Content-Type': 'application/json',
@@ -90,7 +90,6 @@ class ApiService {
       );
 
       final responseData = jsonDecode(response.body);
-      print("Send OTP Response: $responseData");
 
       if (response.statusCode == 200) {
         return {
@@ -104,7 +103,6 @@ class ApiService {
         };
       }
     } catch (e) {
-      print("Network error: $e");
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -120,7 +118,6 @@ class ApiService {
       );
 
       final responseData = jsonDecode(response.body);
-      print("Resend OTP Response: $responseData");
 
       if (response.statusCode == 200) {
         return {
@@ -134,7 +131,6 @@ class ApiService {
         };
       }
     } catch (e) {
-      print("Network error: $e");
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -153,7 +149,6 @@ class ApiService {
         'isHost': isHost,
       };
 
-      print("Sending OTP verification request with body: $requestBody");
       final response = await http.post(
         Uri.parse('$baseUrl${ApiConstants.verifyOtp}'),
         headers: headers,
@@ -161,7 +156,6 @@ class ApiService {
       );
 
       final responseData = jsonDecode(response.body);
-      print("Verify OTP Response: $responseData");
 
       if (response.statusCode == 200) {
         if (responseData['token'] != null) {
@@ -181,7 +175,6 @@ class ApiService {
         };
       }
     } catch (e) {
-      print("Network error: $e");
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -200,7 +193,6 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-      print("Verification Response: $data");
 
       return {
         'success': response.statusCode == 200,
@@ -307,10 +299,6 @@ class ApiService {
         body: jsonEncode(booking.toJson()),
       );
 
-      print("Raw response body: ${response.body}");
-      print("Response status code: ${response.statusCode}");
-
-      // First, try to decode the JSON response
       Map<String, dynamic> decoded;
       try {
         final decodedResponse = jsonDecode(response.body);
@@ -343,9 +331,7 @@ class ApiService {
           'statusCode': response.statusCode,
         };
       }
-    } catch (e, stack) {
-      print('BookingProvider exception: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
       return {
         'success': false,
         'message': 'Network error: ${e.toString()}',
@@ -418,7 +404,7 @@ class ApiService {
     required String userId,
   }) async {
     try {
-      final token = await _getToken();
+      final token = await getToken();
       final uri = Uri.parse('$baseUrl${ApiConstants.uploadProfilePic}/$userId');
 
       final request = http.MultipartRequest('POST', uri);
@@ -492,8 +478,11 @@ class ApiService {
     return {'success': true};
   }
 
-  Future<Car> createCar(Car car) async {
+  /*Future<Car> createCar(Car car) async {
     try {
+      final carJson = car.toJson();
+      carJson.remove('_id'); // Remove MongoDB _id field
+      carJson.remove('id');
       final headers = await getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl${ApiConstants.listCar}'),
@@ -514,26 +503,19 @@ class ApiService {
     } catch (e) {
       throw Exception('Failed to connect to the server: $e');
     }
-  }
+  }*/
 
   Future<void> sendFCMTokenToBackend(String token) async {
     try {
       final headers = await getHeaders();
 
-      final response = await http.post(
+      await http.post(
         Uri.parse('$baseUrl${ApiConstants.saveFcmToken}'),
         headers: headers,
         body: jsonEncode({"fcmToken": token}),
       );
-
-      if (response.statusCode == 200) {
-        print('✅ FCM token sent to backend');
-      } else {
-        print(
-            '❌ Failed to send FCM token: ${response.statusCode}, ${response.body}');
-      }
     } catch (e) {
-      print('❌ Error sending FCM token: $e');
+      debugPrint('❌ Error sending FCM token: $e');
     }
   }
 
@@ -582,7 +564,7 @@ class ApiService {
     }
   }
 
-// Login with email and password
+  // Login with email and password
   Future<Map<String, dynamic>?> loginWithEmail({
     required String email,
     required String password,
@@ -623,5 +605,74 @@ class ApiService {
         'message': 'Network error: ${e.toString()}',
       };
     }
+  }
+
+  Future<Car> createCarWithMap(
+      Map<String, dynamic> carData, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl${ApiConstants.listCar}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // Add the auth token
+        },
+        body: jsonEncode(carData),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+
+        // Handle different response structures
+        if (responseData['success'] == true && responseData['car'] != null) {
+          return Car.fromJson(responseData['car']);
+        } else if (responseData['data'] != null) {
+          return Car.fromJson(responseData['data']);
+        } else {
+          return Car.fromJson(responseData);
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+            'Failed to create car: ${errorData['message'] ?? errorData['error'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to the server: $e');
+    }
+  }
+
+  Future<void> submitReview(ReviewModel review, String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl${ApiConstants.submitReview}'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(review.toJson()),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Failed to submit review: ${response.body}',
+      );
+    }
+  }
+
+  Future<List<ReviewModel>> fetchReviews(String carId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl${ApiConstants.fetchReviews}/$carId'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load reviews: ${response.body}',
+      );
+    }
+
+    final List<dynamic> data = jsonDecode(response.body);
+
+    return data.map((json) => ReviewModel.fromJson(json)).toList();
   }
 }

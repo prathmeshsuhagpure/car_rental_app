@@ -195,9 +195,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         authProvider.user?.driverLicenseNumber ?? '';
     _aadharCardController.text = authProvider.user?.aadharCardNumber ?? '';
     final genderFromApi = authProvider.user?.gender;
-    _selectedGender = _genderOptions.contains(genderFromApi)
-        ? genderFromApi
-        : null;
+    _selectedGender =
+        _genderOptions.contains(genderFromApi) ? genderFromApi : null;
     _selectedDateOfBirth = authProvider.user?.dateOfBirth;
   }
 
@@ -230,6 +229,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           'dateOfBirth': dobString,
         });
 
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -247,6 +247,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           ),
         );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Unexpected error: $e'),
@@ -282,7 +283,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
-                // Profile Photo Section
                 Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
@@ -425,10 +425,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
-                // Personal Information Container
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -468,10 +465,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
-                // Documents Section
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -523,10 +517,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
-                // Update Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -571,7 +562,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                           ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),
@@ -657,6 +647,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   }
 
   Widget buildModernPhoneField() {
+    final isVerified =
+        Provider.of<AuthProvider>(context).user?.isVerified ?? false;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -672,10 +665,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _phoneController,
-          enabled: true,
+          enabled: !isVerified,
           style: TextStyle(
             fontSize: 16,
-            color: darkGray,
+            color: Colors.grey[700],
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
@@ -732,7 +725,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _genderOptions.contains(_selectedGender) ? _selectedGender : null,
+          initialValue:
+              _genderOptions.contains(_selectedGender) ? _selectedGender : null,
           decoration: InputDecoration(
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),

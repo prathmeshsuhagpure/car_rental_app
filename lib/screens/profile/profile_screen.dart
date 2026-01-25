@@ -2,7 +2,7 @@ import 'package:car_rent_app/screens/profile/update_profile_screen.dart';
 import 'package:car_rent_app/services/api_endpoints.dart';
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/bottom_navigation_bar.dart';
-import 'package:car_rent_app/widgets/verify_profile_bottomSheet.dart';
+import 'package:car_rent_app/widgets/verify_profile_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
@@ -78,6 +78,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
     if (result != true) return;
 
+    if (!mounted) return;
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
 
@@ -93,14 +94,12 @@ class ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // 🔄 FIRST: block UI while logging out
-    if (authProvider?.isLoggingOut == true) {
+    if (authProvider.isLoggingOut == true) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // 🔐 SECOND: user is null after logout
     if (authProvider == null || authProvider.user == null) {
       return const SizedBox.shrink(); // or LoginScreen()
     }
@@ -151,7 +150,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -218,7 +217,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -316,7 +315,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -502,7 +501,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -640,16 +639,16 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Widget _infoMessage(String message) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.user; // ✅ Fix user reference
+    final user = authProvider.user;
 
-    final bool isHost = user?.isHost ?? false; // ✅ Ensure user isn't null
+    final bool isHost = user?.isHost ?? false;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -664,7 +663,6 @@ class ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          // ✅ Correct Conditional Check
           if (!(user?.isVerified ?? false))
             Container(
               width: 28,
@@ -703,7 +701,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

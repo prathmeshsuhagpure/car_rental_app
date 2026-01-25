@@ -7,10 +7,10 @@ class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  _NotificationScreenState createState() => _NotificationScreenState();
+  NotificationScreenState createState() => NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen>
+class NotificationScreenState extends State<NotificationScreen>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late AnimationController _slideController;
@@ -197,10 +197,10 @@ class _NotificationScreenState extends State<NotificationScreen>
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -214,10 +214,10 @@ class _NotificationScreenState extends State<NotificationScreen>
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -243,7 +243,7 @@ class _NotificationScreenState extends State<NotificationScreen>
               "${_notificationService.newNotificationsCount} new notifications",
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -361,8 +361,8 @@ class _NotificationScreenState extends State<NotificationScreen>
               gradient: notification.isNew
                   ? LinearGradient(
                 colors: [
-                  notification.color.withOpacity(0.1),
-                  notification.color.withOpacity(0.05),
+                  notification.color.withValues(alpha: 0.1),
+                  notification.color.withValues(alpha: 0.05),
                 ],
               )
                   : null,
@@ -370,15 +370,15 @@ class _NotificationScreenState extends State<NotificationScreen>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: notification.isNew
-                    ? notification.color.withOpacity(0.3)
-                    : Colors.grey.withOpacity(0.2),
+                    ? notification.color.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.2),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: notification.isNew
-                      ? notification.color.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.05),
+                      ? notification.color.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
@@ -393,7 +393,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     gradient: LinearGradient(
                       colors: [
                         notification.color,
-                        notification.color.withOpacity(0.8),
+                        notification.color.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(15),
@@ -497,7 +497,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 gradient: LinearGradient(
                   colors: [
                     notification.color,
-                    notification.color.withOpacity(0.8),
+                    notification.color.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),

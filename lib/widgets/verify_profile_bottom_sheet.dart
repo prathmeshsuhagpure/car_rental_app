@@ -1,8 +1,8 @@
 import 'package:car_rent_app/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
-
 import '../models/country_model.dart';
 import '../utils/helper.dart';
 
@@ -34,7 +34,6 @@ class _ProfileVerificationBottomSheetState
   bool _isVerifying = false;
   int _resendTimer = 0;
   Timer? _timer;
-  String _verificationId = '';
 
   @override
   void initState() {
@@ -75,14 +74,8 @@ class _ProfileVerificationBottomSheetState
 
     try {
       final fullPhone = '${_selectedCountry.code}${_phoneController.text}';
-      print(fullPhone);
-/*      final result =
-          */
       await authProvider.sendOtpLogin(fullPhone);
       await Future.delayed(const Duration(seconds: 2));
-
-      // Generate a mock verification ID
-      _verificationId = DateTime.now().millisecondsSinceEpoch.toString();
 
       setState(() {
         _isOtpSent = true;
@@ -91,6 +84,7 @@ class _ProfileVerificationBottomSheetState
 
       _startResendTimer();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('OTP sent to ${_phoneController.text}'),
@@ -129,13 +123,21 @@ class _ProfileVerificationBottomSheetState
     });
 
     try {
-      final fullPhone = '${_selectedCountry.code}${_phoneController.text.trim()}';
+      final fullPhone =
+          '${_selectedCountry.code}${_phoneController.text.trim()}';
 
-      // Call verifyUserAccount directly with phone number and otp
       final result = await authProvider.verifyUserProfile(fullPhone, otp);
 
       if (result['success'] == true) {
+        if (!mounted) return;
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider
+            .updateProfile({'phoneNumber': _phoneController.text});
         widget.onVerificationComplete?.call(true);
+
+        authProvider.setVerified(true);
+
+        if (!mounted) return;
         Navigator.of(context).pop();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +147,7 @@ class _ProfileVerificationBottomSheetState
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
@@ -166,7 +169,6 @@ class _ProfileVerificationBottomSheetState
     }
   }
 
-
   Future<void> _resendOtp() async {
     if (_resendTimer > 0) return;
 
@@ -181,6 +183,7 @@ class _ProfileVerificationBottomSheetState
 
       _startResendTimer();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('OTP resent successfully'),
@@ -259,7 +262,6 @@ class _ProfileVerificationBottomSheetState
               const SizedBox(height: 30),
 
               if (!_isOtpSent) ...[
-                // Phone Number Field
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -423,28 +425,6 @@ class _ProfileVerificationBottomSheetState
                   child: const Text('Change Phone Number'),
                 ),
               ],
-
-              const SizedBox(height: 10),
-
-              // Demo Note
-              if (_isOtpSent)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber[200]!),
-                  ),
-                  child: const Text(
-                    'Demo: Use OTP "123456" for testing',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.amber,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
             ],
           ),
         ),

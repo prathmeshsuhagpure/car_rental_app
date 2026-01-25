@@ -20,11 +20,10 @@ class PaymentMethodsScreen extends StatefulWidget {
   final String carId;
   final DateTime startDate;
   final DateTime endDate;
-  final String pickupLocation;
-  final String dropoffLocation;
+  final String pickUpLocation;
+  final String dropOffLocation;
   final String carName;
   final double rating;
-  final int trips;
 
   const PaymentMethodsScreen({
     super.key,
@@ -33,11 +32,10 @@ class PaymentMethodsScreen extends StatefulWidget {
     required this.carId,
     required this.startDate,
     required this.endDate,
-    required this.pickupLocation,
-    required this.dropoffLocation,
+    required this.pickUpLocation,
+    required this.dropOffLocation,
     required this.carName,
     required this.rating,
-    required this.trips,
   });
 
   @override
@@ -142,15 +140,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         carId: widget.carId,
         startDate: widget.startDate,
         endDate: widget.endDate,
-        pickupLocation: widget.pickupLocation,
-        dropoffLocation: widget.dropoffLocation,
+        pickUpLocation: widget.pickUpLocation,
+        dropOffLocation: widget.dropOffLocation,
         amount: totalAmount1,
         paymentId: "",
         id: '',
         userId: currentUser.id,
         carName: widget.carName,
         rating: widget.rating,
-        trips: widget.trips,
         paymentStatus: '',
         bookingStatus: '',
         status: 'active',
@@ -225,7 +222,6 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Credit Card Display
               SizedBox(
                 width: double.infinity,
                 child: CarouselSlider(
@@ -242,7 +238,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -268,7 +264,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 15,
                       offset: const Offset(0, 4),
                     ),
@@ -305,10 +301,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2E7D57).withOpacity(0.1),
+                              color: const Color(0xFF2E7D57).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0xFF2E7D57).withOpacity(0.2),
+                                color: const Color(0xFF2E7D57).withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -529,14 +525,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: DropdownButtonFormField<String>(
-                  value: _selectedCountry,
+                  initialValue: _selectedCountry,
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
@@ -724,7 +720,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -774,7 +770,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

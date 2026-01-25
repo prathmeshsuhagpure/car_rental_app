@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/favourites_provider.dart';
 import '../../widgets/bottom_navigation_bar.dart';
-import '../home/host_home_screen.dart';
+import '../host_screens/host_home_screen.dart';
 
 class EmailSignupScreen extends StatefulWidget {
   const EmailSignupScreen({super.key});
@@ -35,17 +36,6 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
           _confirmPasswordController.text.trim().isNotEmpty &&
           _passwordController.text == _confirmPasswordController.text;
     }
-  }
-
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-    );
-    return emailRegex.hasMatch(email);
-  }
-
-  bool _isStrongPassword(String password) {
-    return password.length >= 6;
   }
 
   @override
@@ -413,7 +403,7 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          result?['message'] ??
+                          result['message'] ??
                               (_isLoginMode ? "Login failed" : "Signup failed"),
                         ),
                         backgroundColor: Colors.red,
@@ -433,6 +423,11 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
                       backgroundColor: const Color(0xFF059669),
                     ),
                   );
+
+                  if(result['success'] == true){
+                    final userId = authProvider.user!.id;
+                    context.read<FavoritesProvider>().setUser(userId);
+                  }
 
                   Navigator.pushAndRemoveUntil(
                     context,

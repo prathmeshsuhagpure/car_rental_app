@@ -1,7 +1,10 @@
 import 'package:car_rent_app/providers/booking_provider.dart';
 import 'package:car_rent_app/providers/car_provider.dart';
+import 'package:car_rent_app/providers/favourites_provider.dart';
+import 'package:car_rent_app/providers/review_provider.dart';
 import 'package:car_rent_app/screens/auth/login_screen.dart';
-import 'package:car_rent_app/screens/home/host_home_screen.dart';
+import 'package:car_rent_app/screens/host_screens/host_home_screen.dart';
+import 'package:car_rent_app/services/api_service.dart';
 import 'package:car_rent_app/services/notification_service.dart';
 import 'package:car_rent_app/utils/date_time_selection.dart';
 import 'package:car_rent_app/widgets/bottom_navigation_bar.dart';
@@ -17,7 +20,6 @@ final navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("📩 Handling background message: ${message.messageId}");
 }
 
 void main() async {
@@ -25,9 +27,8 @@ void main() async {
   await Firebase.initializeApp();
   try {
     await dotenv.load(fileName: ".env");
-    print("✅ .env loaded successfully");
   } catch (e) {
-    print("⚠️ Failed to load .env file: $e");
+    debugPrint("Failed to load .env file: $e");
   }
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await NotificationService().initialize();
@@ -41,13 +42,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Base services
+        Provider<ApiService>(
+          create: (_) => ApiService(),
+        ),
+        // Independent providers
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CarProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider<DateTimeSelectionService>(
           create: (_) => DateTimeSelectionService(),
         ),
-        // Add other providers here if needed
+        // 👇 DEPENDENT provider (FIXED)
+        ChangeNotifierProxyProvider<ApiService, ReviewProvider>(
+          create: (_) => ReviewProvider(null),
+          update: (_, apiService, previous) =>
+              ReviewProvider(apiService),
+        ),
       ],
       child: MaterialApp(
         title: 'Car Rental App',

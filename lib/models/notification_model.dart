@@ -83,8 +83,8 @@ class NotificationItem {
       'title': title,
       'subtitle': subtitle,
       'time': time,
-      'icon': _iconToString(icon),  // store name instead of codePoint
-      'color': color.value,
+      'icon': _iconToString(icon),
+      'color': color.toARGB32(),
       'isNew': isNew,
       'type': type,
       'payload': payload,

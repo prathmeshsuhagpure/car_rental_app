@@ -1,7 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/car_model.dart';
+import '../providers/favourites_provider.dart';
 import '../screens/car/car_detail_screen.dart';
 
 class CarCard extends StatefulWidget {
@@ -70,86 +72,96 @@ class _CarCardState extends State<CarCard> {
                   height: 200,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(12)),
                     color: Colors.grey[300],
                   ),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(12)),
                     child: SizedBox(
                       height: 200,
                       width: double.infinity,
                       child: car.images.isNotEmpty
                           ? Stack(
-                        children: [
-                          CarouselSlider(
-                            options: CarouselOptions(
-                              height: 200,
-                              viewportFraction: 1.0,
-                              enableInfiniteScroll: car.images.length > 1,
-                              autoPlay: car.images.length > 1,
-                              onPageChanged: (index, reason) {
-                                setState(() {
-                                  _currentImageIndex = index;
-                                });
-                              },
-                            ),
-                            items: car.images.map((imageUrl) {
-                              return Builder(
-                                builder: (BuildContext context) {
-                                  return Image.network(
-                                    imageUrl,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey[300],
-                                        child: Icon(
-                                          Icons.directions_car,
-                                          size: 80,
-                                          color: Colors.white,
-                                        ),
-                                      );
+                              children: [
+                                CarouselSlider(
+                                  options: CarouselOptions(
+                                    height: 200,
+                                    viewportFraction: 1.0,
+                                    enableInfiniteScroll: car.images.length > 1,
+                                    autoPlay: car.images.length > 1,
+                                    onPageChanged: (index, reason) {
+                                      setState(() {
+                                        _currentImageIndex = index;
+                                      });
                                     },
-                                  );
-                                },
-                              );
-                            }).toList(),
-                          ),
-                          // Dot Indicators
-                          if (car.images.length > 1)
-                            Positioned(
-                              bottom: 8,
-                              left: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: car.images.asMap().entries.map((entry) {
-                                  return Container(
-                                    width: 8.0,
-                                    height: 8.0,
-                                    margin: EdgeInsets.symmetric(horizontal: 4.0),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: _currentImageIndex == entry.key
-                                          ? Colors.white
-                                          : Colors.white.withOpacity(0.4),
+                                  ),
+                                  items: car.images.map((imageUrl) {
+                                    return Builder(
+                                      builder: (BuildContext context) {
+                                        return Image.network(
+                                          imageUrl,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey[300],
+                                              child: Icon(
+                                                Icons.directions_car,
+                                                size: 80,
+                                                color: Colors.white,
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                                // Dot Indicators
+                                if (car.images.length > 1)
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 0,
+                                    right: 0,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: car.images
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                        return Container(
+                                          width: 8.0,
+                                          height: 8.0,
+                                          margin: EdgeInsets.symmetric(
+                                              horizontal: 4.0),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color:
+                                                _currentImageIndex == entry.key
+                                                    ? Colors.white
+                                                    : Colors.white
+                                                        .withValues(alpha: 0.4),
+                                          ),
+                                        );
+                                      }).toList(),
                                     ),
-                                  );
-                                }).toList(),
+                                  ),
+                              ],
+                            )
+                          : Container(
+                              color: Colors.grey[300],
+                              child: Center(
+                                child: Icon(
+                                  Icons.directions_car,
+                                  size: 100,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                        ],
-                      )
-                          : Container(
-                        color: Colors.grey[300],
-                        child: Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            size: 100,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                 ),
@@ -192,21 +204,36 @@ class _CarCardState extends State<CarCard> {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      car.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: car.isFavorite ? Colors.red : Colors.black54,
-                      size: 20,
-                    ),
+                  child: Consumer<FavoritesProvider>(
+                    builder: (context, favProvider, _) {
+                      final isFav = favProvider.isFavorite(car.id);
+
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(50),
+                          onTap: () {
+                            favProvider.toggleFavorite(car.id);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color: isFav ? Colors.red : Colors.black54,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-                // Guest Favorite badge
-                if (car.isGuestFavorite)
+
+                /*if (car.isGuestFavorite)
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -232,7 +259,7 @@ class _CarCardState extends State<CarCard> {
                         ],
                       ),
                     ),
-                  ),
+                  ),*/
               ],
             ),
             Padding(
@@ -259,15 +286,16 @@ class _CarCardState extends State<CarCard> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(Icons.directions_walk, size: 16, color: Colors.black54),
+                      Icon(Icons.directions_walk,
+                          size: 16, color: Colors.black54),
                       SizedBox(width: 4),
                       Text(
-                        car.distance,
+                        car.formattedDistance,
                         style: TextStyle(fontSize: 13, color: Colors.black54),
                       ),
                       Spacer(),
                       Text(
-                        "₹${car.pricePerDay} /hr",
+                        "₹${car.originalPrice} / day",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -281,19 +309,21 @@ class _CarCardState extends State<CarCard> {
                     children: [
                       if (car.hasActiveFastTag)
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             'Active FASTag',
-                            style: TextStyle(fontSize: 11, color: Colors.black54),
+                            style:
+                                TextStyle(fontSize: 11, color: Colors.black54),
                           ),
                         ),
                       Spacer(),
                       Text(
-                        "₹${car.totalPrice} excluding fees",
+                        "₹${car.offerPrice} excluding fees",
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.black54,

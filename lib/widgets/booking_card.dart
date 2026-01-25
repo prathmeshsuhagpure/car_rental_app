@@ -115,24 +115,24 @@ class _BookingCardState extends State<BookingCard>
               boxShadow: [
                 BoxShadow(
                   color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.1),
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.1),
                   blurRadius: 25,
                   offset: const Offset(0, 8),
                   spreadRadius: -5,
                 ),
                 BoxShadow(
                   color: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.white.withOpacity(0.8),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.8),
                   blurRadius: 1,
                   offset: const Offset(0, 1),
                 ),
               ],
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.05),
                 width: 1,
               ),
             ),
@@ -176,10 +176,10 @@ class _BookingCardState extends State<BookingCard>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _statusColor.withOpacity(0.1),
+            color: _statusColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _statusColor.withOpacity(0.3),
+              color: _statusColor.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -219,10 +219,10 @@ class _BookingCardState extends State<BookingCard>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -247,14 +247,14 @@ class _BookingCardState extends State<BookingCard>
   }
 
   Widget _buildBookingDetails() {
-    final totalAmount = widget.car.pricePerDay * widget.booking.durationInDays;
+    final totalAmount = widget.car.originalPrice * widget.booking.durationInDays;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -281,7 +281,7 @@ class _BookingCardState extends State<BookingCard>
           _buildDetailRow(
             Icons.attach_money,
             'Total Amount (Excluding Fees*)',
-            '\₹ ${totalAmount.toStringAsFixed(2)}',
+            '₹ ${totalAmount.toStringAsFixed(2)}',
           ),
         ],
       ),
@@ -294,7 +294,7 @@ class _BookingCardState extends State<BookingCard>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -329,7 +329,6 @@ class _BookingCardState extends State<BookingCard>
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    print("widget: ${widget.onPay}");
     return Row(
       children: [
         if (widget.onPay != null &&
@@ -432,14 +431,14 @@ class _BookingCardState extends State<BookingCard>
         style: ElevatedButton.styleFrom(
           backgroundColor: isPrimary
               ? getButtonColor()
-              : getButtonColor().withOpacity(0.1),
+              : getButtonColor().withValues(alpha: 0.1),
           foregroundColor: isPrimary ? Colors.white : getButtonColor(),
           elevation: isPrimary ? 2 : 0,
-          shadowColor: getButtonColor().withOpacity(0.3),
+          shadowColor: getButtonColor().withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: getButtonColor().withOpacity(isPrimary ? 0 : 0.3),
+              color: getButtonColor().withValues(alpha: isPrimary ? 0 : 0.3),
               width: 1,
             ),
           ),

@@ -119,7 +119,7 @@ class _CarListScreenState extends State<CarListScreen>
 
     // Load cars when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CarProvider>(context, listen: false).loadCars();
+      Provider.of<CarProvider>(context, listen: false).loadCars(context);
     });
   }
 
@@ -271,7 +271,7 @@ class _CarListScreenState extends State<CarListScreen>
               child: Material(
                 elevation: 2,
                 borderRadius: BorderRadius.circular(16),
-                shadowColor: Colors.black.withOpacity(0.1),
+                shadowColor: Colors.black.withValues(alpha: 0.1),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -287,7 +287,7 @@ class _CarListScreenState extends State<CarListScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2E7D32).withOpacity(0.1),
+                          color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -377,10 +377,10 @@ class _CarListScreenState extends State<CarListScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF2E7D32).withOpacity(0.1),
+        color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF2E7D32).withOpacity(0.2),
+          color: const Color(0xFF2E7D32).withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -452,7 +452,7 @@ class _CarListScreenState extends State<CarListScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -490,7 +490,7 @@ class _CarListScreenState extends State<CarListScreen>
           Material(
             elevation: 2,
             borderRadius: BorderRadius.circular(12),
-            shadowColor: Colors.black.withOpacity(0.1),
+            shadowColor: Colors.black.withValues(alpha: 0.1),
             child: InkWell(
               onTap: _showSortBottomSheet,
               borderRadius: BorderRadius.circular(12),
@@ -627,7 +627,7 @@ class _CarListScreenState extends State<CarListScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: const Offset(0, 4),
             ),
@@ -668,7 +668,7 @@ class _CarListScreenState extends State<CarListScreen>
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => carProvider.loadCars(),
+              onPressed: () => carProvider.loadCars(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 foregroundColor: Colors.white,
@@ -702,7 +702,7 @@ class _CarListScreenState extends State<CarListScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: const Offset(0, 4),
             ),
@@ -763,7 +763,7 @@ class _CarListScreenState extends State<CarListScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 15,
                         offset: const Offset(0, 4),
                       ),
@@ -854,8 +854,8 @@ class FilterChip extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? Colors.orange.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.orange.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.05),
                 blurRadius: isSelected ? 8 : 4,
                 offset: const Offset(0, 2),
               ),

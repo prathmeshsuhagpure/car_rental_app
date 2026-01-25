@@ -16,7 +16,7 @@ class CarInfoCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -121,7 +121,7 @@ class CarInfoCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -139,15 +139,15 @@ class CarInfoCard extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: car.location,
+                    text: car.location.address,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.blue[600],
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (car.distance != null) ...[
+                  if (car.formattedDistance != null) ...[
                     TextSpan(
-                      text: " | ${car.distance} Away",
+                      text: " | ${car.formattedDistance} Away",
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.blue[600],
                         fontWeight: FontWeight.w600,
@@ -170,7 +170,7 @@ class CarInfoCard extends StatelessWidget {
     if (car.fuelType != null) {
       details.add(_buildInfoChip(
         context,
-        car.fuelType!,
+        car.fuelType,
         Icons.local_gas_station_rounded,
       ));
     }
@@ -192,7 +192,7 @@ class CarInfoCard extends StatelessWidget {
     }
 
     if (car.rating != null) {
-      details.add(_buildRatingChip(context, car.rating!));
+      details.add(_buildRatingChip(context, car.rating));
     }
 
     return Wrap(
@@ -212,7 +212,7 @@ class CarInfoCard extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -247,7 +247,7 @@ class CarInfoCard extends StatelessWidget {
         color: colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.tertiary.withOpacity(0.3),
+          color: colorScheme.tertiary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

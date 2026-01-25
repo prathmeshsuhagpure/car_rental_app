@@ -14,28 +14,28 @@ class PaymentScreen extends StatefulWidget {
     required this.user,
     required this.startDate,
     required this.endDate,
-    required this.pickupLocation,
-    required this.dropoffLocation,
+    required this.pickUpLocation,
+    required this.dropOffLocation,
   });
 
   final Car car;
   final User user;
   final DateTime startDate;
   final DateTime endDate;
-  final String pickupLocation;
-  final String dropoffLocation;
+  final String pickUpLocation;
+  final String dropOffLocation;
 
   @override
-  _PaymentScreenState createState() => _PaymentScreenState();
+  PaymentScreenState createState() => PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class PaymentScreenState extends State<PaymentScreen> {
   late BookingModel booking;
 
   // Calculate total amount based on number of days
   double _calculateTotalAmount() {
     final days = widget.endDate.difference(widget.startDate).inDays;
-    return widget.car.pricePerDay * (days == 0 ? 1 : days); // Minimum 1 day
+    return widget.car.originalPrice * (days == 0 ? 1 : days); // Minimum 1 day
   }
 
   @override
@@ -44,17 +44,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // Create booking from the passed data
     booking = BookingModel(
       id: "",
-      carId: widget.car.id!,
+      carId: widget.car.id,
       userId: widget.user.id,
       carName: widget.car.name, // Use car.name instead of car.brand
       startDate: widget.startDate,
       endDate: widget.endDate,
-      pickupLocation: widget.pickupLocation,
-      dropoffLocation: widget.dropoffLocation,
+      pickUpLocation: widget.pickUpLocation,
+      dropOffLocation: widget.dropOffLocation,
       amount: _calculateTotalAmount(), // Use calculated total amount
       paymentId: '',
       rating: widget.car.rating,
-      trips: widget.car.trips ?? 0, // Use car.trips or default to 0
+      //trips: widget.car.trips ?? 0, // Use car.trips or default to 0
       paymentStatus: 'pending',
       bookingStatus: 'pending',
       status: 'active',
@@ -69,7 +69,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAmount = widget.car.pricePerDay * booking.durationInDays;
+    final totalAmount = widget.car.originalPrice * booking.durationInDays;
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: CustomAppBar(
@@ -102,18 +102,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     builder: (context) => PaymentMethodsScreen(
                       amount: totalAmount, // Use booking.amount instead of booking.totalAmount
                       currency: 'INR',
-                      carId: widget.car.id!,
+                      carId: widget.car.id,
                       startDate: booking.startDate,
                       endDate: booking.endDate,
-                      pickupLocation: widget.pickupLocation.isNotEmpty
-                          ? widget.pickupLocation
+                      pickUpLocation: widget.pickUpLocation.isNotEmpty
+                          ? widget.pickUpLocation
                           : "Default Pickup Location",
-                      dropoffLocation: widget.dropoffLocation.isNotEmpty
-                          ? widget.dropoffLocation
-                          : "Default Dropoff Location",
+                      dropOffLocation: widget.dropOffLocation.isNotEmpty
+                          ? widget.dropOffLocation
+                          : "Default Drop off Location",
                       carName: widget.car.name, // Use widget.car.name instead of booking.carName
                       rating: widget.car.rating,
-                      trips: widget.car.trips ?? 0, // Use widget.car.trips with null safety
                     ),
                   ),
                 );

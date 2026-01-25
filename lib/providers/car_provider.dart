@@ -1,6 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/car_model.dart';
 import '../services/api_service.dart';
+import 'favourites_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class CarProvider with ChangeNotifier {
   List<Car> _cars = [];
@@ -15,14 +18,19 @@ class CarProvider with ChangeNotifier {
 
   final ApiService _apiService = ApiService();
 
-  Future<void> loadCars() async {
+  Future<void> loadCars(BuildContext context) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
+    final favProvider = context.read<FavoritesProvider>();
+
     try {
       final response = await _apiService.getCars(); // should return List<Car>
       _cars = response;
+
+      await favProvider.restoreFavorites();
+
     } catch (e) {
       _error = 'Error getting cars: $e';
     }
@@ -71,12 +79,12 @@ class CarProvider with ChangeNotifier {
   }
 
   List<Car> filterByAvailability(bool available) {
-    return _cars.where((car) => car.availability == available).toList();
+    return _cars.where((car) => car.isAvailable == available).toList();
   }
 
   List<Car> filterByPriceRange(double minPrice, double maxPrice) {
     return _cars.where((car) =>
-    car.pricePerDay >= minPrice && car.pricePerDay <= maxPrice
+    car.originalPrice >= minPrice && car.originalPrice <= maxPrice
     ).toList();
   }
 
@@ -106,7 +114,7 @@ class CarProvider with ChangeNotifier {
     List<Car> availableCars = filterByAvailability(true);
 
     availableCars.sort((a, b) {
-      return a.pricePerDay.compareTo(b.pricePerDay);
+      return a.originalPrice.compareTo(b.originalPrice);
     });
 
     int featuredCount = availableCars.length > 5 ? 5 : availableCars.length;

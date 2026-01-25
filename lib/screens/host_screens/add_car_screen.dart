@@ -1,40 +1,40 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:car_rent_app/providers/auth_provider.dart';
+import 'package:car_rent_app/screens/host_screens/helper/vehicle_registration_helper.dart';
 import 'package:car_rent_app/services/api_service.dart';
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/car_model.dart';
 import '../../utils/helper.dart';
+import '../../utils/user_and_car_current_location.dart';
+import '../../widgets/car_images_uploads.dart';
+import 'helper/location_helper.dart';
 
 class AddCarScreen extends StatefulWidget {
   const AddCarScreen({super.key});
 
   @override
-  State<AddCarScreen> createState() => _AddCarScreenState();
+  State<AddCarScreen> createState() => AddCarScreenState();
 }
 
-class _AddCarScreenState extends State<AddCarScreen> {
+class AddCarScreenState extends State<AddCarScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
+  bool _isDraftLoaded = false;
 
   // Controllers for text fields
   final _licensePlateController = TextEditingController();
   final _averageController = TextEditingController();
   final _dailyRateController = TextEditingController();
-  final _weeklyRateController = TextEditingController();
-  final _monthlyRateController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
   final _addressLine1Controller = TextEditingController();
-  final _addressLine2Controller = TextEditingController();
   final _landmarkController = TextEditingController();
   final _zipCodeController = TextEditingController();
 
@@ -48,13 +48,11 @@ class _AddCarScreenState extends State<AddCarScreen> {
   String? _selectedColor;
   int _selectedSeats = 5;
 
-  // Feature selections
-  Set<String> _selectedFeatures = {};
+  // Lists
+  Set<String> selectedFeatures = {};
+  List<File> carImages = [];
 
-  final ImagePicker _picker = ImagePicker();
-  List<File> _carImages = [];
-
-  // Availability
+  bool _hasActiveFastTag = true;
   bool _instantBooking = true;
   bool _isAvailable = true;
 
@@ -82,43 +80,34 @@ class _AddCarScreenState extends State<AddCarScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // Progress indicator
               Container(
                 padding: const EdgeInsets.all(16),
                 color: Colors.white,
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: 0.3,
-                            backgroundColor: Colors.grey[200],
-                            color: const Color(0xFF2196F3),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Step 1 of 3',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Basic Information',
-                      style: TextStyle(
-                        fontSize: 16,
+                    Text(
+                      _isDraftLoaded
+                          ? 'Continue Your Car Listing'
+                          : 'Fill Your Car Details.',
+                      style: const TextStyle(
+                        fontSize: 22,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (_isDraftLoaded)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Draft loaded - continue where you left off',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -126,19 +115,15 @@ class _AddCarScreenState extends State<AddCarScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Car Images Section
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Car Photos',
                         'Add high-quality photos to attract more renters',
                         [
                           _buildImageUploadSection(),
                         ],
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Basic Information
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Basic Information',
                         'Enter your car\'s basic details',
                         [
@@ -149,11 +134,10 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   'Car Brand',
                                   _carBrands,
                                   carBrands,
-                                      (value) =>
-                                      setState(() {
-                                        _carBrands = value;
-                                        _selectedModel = null;
-                                      }),
+                                  (value) => setState(() {
+                                    _carBrands = value;
+                                    _selectedModel = null;
+                                  }),
                                   Icons.car_rental,
                                 ),
                               ),
@@ -165,7 +149,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   _carBrands != null
                                       ? (carModelsByBrand[_carBrands!] ?? [])
                                       : [], // Dynamically get models
-                                      (value) =>
+                                  (value) =>
                                       setState(() => _selectedModel = value),
                                   // Update _selectedModel
                                   Icons.car_rental,
@@ -178,20 +162,17 @@ class _AddCarScreenState extends State<AddCarScreen> {
                             children: [
                               Expanded(
                                   child: _buildDropdown(
-                                    'Model Year',
-                                    _modelYear,
-                                    modelYear,
-                                        (value) =>
-                                        setState(() {
-                                          _modelYear = value;
-                                        }),
-                                    Icons.calendar_month,
-                                  )),
+                                'Model Year',
+                                _modelYear,
+                                modelYear,
+                                (value) => setState(() {
+                                  _modelYear = value;
+                                }),
+                                Icons.calendar_month,
+                              )),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: _buildTextField(
-                                  'Vehicle Registration Number',
-                                  'AB12CD3456',
+                                child: buildVehicleRegTextField(
                                   _licensePlateController,
                                   Icons.credit_card,
                                 ),
@@ -204,7 +185,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                       const SizedBox(height: 20),
 
                       // Specifications
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Specifications',
                         'Technical details about your car',
                         [
@@ -215,7 +196,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   'Fuel Type',
                                   _selectedFuelType,
                                   fuelTypes,
-                                      (value) =>
+                                  (value) =>
                                       setState(() => _selectedFuelType = value),
                                   Icons.local_gas_station,
                                 ),
@@ -226,10 +207,8 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   'Transmission',
                                   _selectedTransmission,
                                   transmissionTypes,
-                                      (value) =>
-                                      setState(
-                                              () =>
-                                          _selectedTransmission = value),
+                                  (value) => setState(
+                                      () => _selectedTransmission = value),
                                   Icons.settings,
                                 ),
                               ),
@@ -243,7 +222,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   'Body Type',
                                   _selectedBodyType,
                                   bodyTypes,
-                                      (value) =>
+                                  (value) =>
                                       setState(() => _selectedBodyType = value),
                                   Icons.directions_car,
                                 ),
@@ -254,7 +233,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                                   'Color',
                                   _selectedColor,
                                   colors,
-                                      (value) =>
+                                  (value) =>
                                       setState(() => _selectedColor = value),
                                   Icons.color_lens,
                                 ),
@@ -271,7 +250,6 @@ class _AddCarScreenState extends State<AddCarScreen> {
                               Expanded(
                                 child: _buildTextField(
                                   'Average (KM/L)',
-                                  '15.00',
                                   _averageController,
                                   Icons.speed,
                                   keyboardType: TextInputType.number,
@@ -279,13 +257,22 @@ class _AddCarScreenState extends State<AddCarScreen> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+                          _buildSwitchTile(
+                            'FastTag',
+                            'Has Active FastTag',
+                            _hasActiveFastTag,
+                            Icons.check_circle,
+                            (value) =>
+                                setState(() => _hasActiveFastTag = value),
+                          ),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
                       // Features
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Features & Amenities',
                         'Select all features available in your car',
                         [
@@ -296,40 +283,15 @@ class _AddCarScreenState extends State<AddCarScreen> {
                       const SizedBox(height: 20),
 
                       // Pricing
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Pricing',
                         'Set competitive rates for your car',
                         [
                           _buildTextField(
-                            'Daily Rate (₹)',
-                            '500',
+                            'Price per Day',
                             _dailyRateController,
                             Icons.currency_rupee,
                             keyboardType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  'Weekly Rate (₹)',
-                                  '3500',
-                                  _weeklyRateController,
-                                  Icons.date_range,
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildTextField(
-                                  'Monthly Rate (₹)',
-                                  '15000',
-                                  _monthlyRateController,
-                                  Icons.calendar_month,
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
@@ -337,55 +299,57 @@ class _AddCarScreenState extends State<AddCarScreen> {
                       const SizedBox(height: 20),
 
                       // Location & Description
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Location & Description',
                         'Help renters find and understand your car',
                         [
-                          _buildTextField(
-                            'Enter State',
-                            'Street address or landmark',
-                            _stateController,
+                          _buildDropdown(
+                            'Select State',
+                            _stateController.text.isNotEmpty
+                                ? _stateController.text
+                                : null,
+                            indianStates,
+                            (value) => setState(() {
+                              _stateController.text = value ?? '';
+                              _cityController.text = '';
+                            }),
                             Icons.location_on,
                           ),
-                          const SizedBox(height: 10),
-                          _buildTextField(
-                            'Enter City',
-                            'Street address or landmark',
-                            _cityController,
-                            Icons.location_on,
+                          const SizedBox(height: 16),
+                          _buildDropdown(
+                            'Select City / District',
+                            _cityController.text.isNotEmpty
+                                ? _cityController.text
+                                : null,
+                            _stateController.text.isNotEmpty
+                                ? citiesByState[_stateController.text] ?? []
+                                : [],
+                            (value) => setState(
+                                () => _cityController.text = value ?? ''),
+                            Icons.location_city,
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
                           _buildTextField(
                             'Address Line 1',
-                            'Street address or landmark',
                             _addressLine1Controller,
-                            Icons.location_on,
+                            Icons.home,
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
                           _buildTextField(
-                            'Address Line 2',
-                            'Street address or landmark',
-                            _addressLine2Controller,
-                            Icons.location_on,
-                          ),
-                          const SizedBox(height: 10),
-                          _buildTextField(
-                            'Enter Land Mark',
-                            'Street address or landmark',
+                            'Landmark',
                             _landmarkController,
-                            Icons.location_on,
+                            Icons.place,
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
                           _buildTextField(
-                            'Enter ZIP Code',
-                            'Street address or landmark',
+                            'ZIP Code',
                             _zipCodeController,
-                            Icons.location_on,
+                            Icons.local_post_office,
+                            keyboardType: TextInputType.number,
                           ),
                           const SizedBox(height: 20),
                           _buildTextField(
                             'Car Description',
-                            'Describe your car, any special instructions, etc.',
                             _descriptionController,
                             Icons.description,
                             maxLines: 4,
@@ -396,7 +360,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                       const SizedBox(height: 20),
 
                       // Availability Settings
-                      _buildSectionCard(
+                      buildSectionCard(
                         'Availability Settings',
                         'Configure how renters can book your car',
                         [
@@ -405,8 +369,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                             'Allow renters to book immediately without approval',
                             _instantBooking,
                             Icons.flash_on,
-                                (value) =>
-                                setState(() => _instantBooking = value),
+                            (value) => setState(() => _instantBooking = value),
                           ),
                           const SizedBox(height: 8),
                           _buildSwitchTile(
@@ -414,7 +377,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                             'Your car is ready for bookings',
                             _isAvailable,
                             Icons.check_circle,
-                                (value) => setState(() => _isAvailable = value),
+                            (value) => setState(() => _isAvailable = value),
                           ),
                         ],
                       ),
@@ -435,13 +398,13 @@ class _AddCarScreenState extends State<AddCarScreen> {
             backgroundColor: _isLoading ? Colors.grey : hostPrimary,
             icon: _isLoading
                 ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
                 : Icon(Icons.check),
             label: Text(
               _isLoading ? "Listing..." : " List My Car",
@@ -454,61 +417,19 @@ class _AddCarScreenState extends State<AddCarScreen> {
     );
   }
 
-  Widget _buildSectionCard(String title, String subtitle,
-      List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 20),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(String label,
-      String hint,
-      TextEditingController controller,
-      IconData icon, {
-        TextInputType? keyboardType,
-        int maxLines = 1,
-      }) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
-        hintText: hint,
         prefixIcon: Icon(icon, color: Colors.grey[600]),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -534,14 +455,16 @@ class _AddCarScreenState extends State<AddCarScreen> {
     );
   }
 
-  Widget _buildDropdown(String label,
-      String? value,
-      List<String> items,
-      Function(String?) onChanged,
-      IconData icon,) {
+  Widget _buildDropdown(
+    String label,
+    String? value,
+    List<String> items,
+    Function(String?) onChanged,
+    IconData icon,
+  ) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Colors.grey[600]),
@@ -639,14 +562,14 @@ class _AddCarScreenState extends State<AddCarScreen> {
       spacing: 8,
       runSpacing: 8,
       children: availableFeatures.map((feature) {
-        final isSelected = _selectedFeatures.contains(feature);
+        final isSelected = selectedFeatures.contains(feature);
         return GestureDetector(
           onTap: () {
             setState(() {
               if (isSelected) {
-                _selectedFeatures.remove(feature);
+                selectedFeatures.remove(feature);
               } else {
-                _selectedFeatures.add(feature);
+                selectedFeatures.add(feature);
               }
             });
           },
@@ -654,7 +577,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF2196F3).withOpacity(0.1)
+                  ? const Color(0xFF2196F3).withValues(alpha: 0.1)
                   : Colors.grey[100],
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
@@ -676,9 +599,9 @@ class _AddCarScreenState extends State<AddCarScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     color:
-                    isSelected ? const Color(0xFF2196F3) : Colors.black87,
+                        isSelected ? const Color(0xFF2196F3) : Colors.black87,
                     fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ],
@@ -694,9 +617,19 @@ class _AddCarScreenState extends State<AddCarScreen> {
       height: 120,
       child: Row(
         children: [
-          // Add photo button
           GestureDetector(
-            onTap: _addPhoto,
+            onTap: () {
+              addPhoto(
+                carId: "",
+                carImages: carImages,
+                context: context,
+                onImagesAdded: (newImages) {
+                  setState(() {
+                    carImages.addAll(newImages);
+                  });
+                },
+              );
+            },
             child: Container(
               width: 100,
               height: 100,
@@ -732,7 +665,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _carImages.map((image) {
+                children: carImages.map((image) {
                   return Container(
                     width: 100,
                     height: 100,
@@ -755,7 +688,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.7),
+                                color: Colors.black.withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -778,11 +711,13 @@ class _AddCarScreenState extends State<AddCarScreen> {
     );
   }
 
-  Widget _buildSwitchTile(String title,
-      String subtitle,
-      bool value,
-      IconData icon,
-      Function(bool) onChanged,) {
+  Widget _buildSwitchTile(
+    String title,
+    String subtitle,
+    bool value,
+    IconData icon,
+    Function(bool) onChanged,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -819,51 +754,21 @@ class _AddCarScreenState extends State<AddCarScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF2196F3),
+            activeThumbColor: const Color(0xFF2196F3),
           ),
         ],
       ),
     );
   }
 
-  void _addPhoto() async {
-    if (_carImages.length >= 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You can only upload up to 10 photos.')),
-      );
-      return;
-    }
-
-    final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-
-    if (pickedFiles != null && pickedFiles.isNotEmpty) {
-      final newFiles = pickedFiles.map((file) => File(file.path)).toList();
-
-      if (_carImages.length + newFiles.length > 10) {
-        final allowedCount = 10 - _carImages.length;
-        newFiles.removeRange(allowedCount, newFiles.length);
-      }
-
-      setState(() {
-        _carImages.addAll(newFiles);
-      });
-
-      if (_carImages.length < 5) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please upload at least 5 images.')),
-        );
-      }
-    }
-  }
-
   void _removePhoto(File image) {
     setState(() {
-      _carImages.remove(image);
+      carImages.remove(image);
     });
   }
 
   void _saveDraft() async {
-    if (_carImages.length < 5) {
+    if (carImages.length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Please add at least 5 images to save a draft.')),
@@ -873,11 +778,8 @@ class _AddCarScreenState extends State<AddCarScreen> {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Build location string
     final location =
-        '${_stateController.text}, ${_cityController
-        .text}, ${_addressLine1Controller.text} ${_addressLine2Controller
-        .text} ${_landmarkController.text} ${_zipCodeController.text}';
+        '${_stateController.text}, ${_cityController.text}, ${_addressLine1Controller.text} ${_landmarkController.text} ${_zipCodeController.text}';
 
     final draft = {
       'carBrand': _carBrands,
@@ -891,12 +793,10 @@ class _AddCarScreenState extends State<AddCarScreen> {
       'selectedSeats': _selectedSeats,
       'average': _averageController.text,
       'dailyRate': _dailyRateController.text,
-      'weeklyRate': _weeklyRateController.text,
-      'monthlyRate': _monthlyRateController.text,
       'description': _descriptionController.text,
       'location': location,
-      'selectedFeatures': _selectedFeatures.toList(),
-      'images': _carImages.map((f) => f.path).toList(),
+      'selectedFeatures': selectedFeatures.toList(),
+      //'images': carImages.map((f) => f.path).toList(),
       'instantBooking': _instantBooking,
       'isAvailable': _isAvailable,
       'incomplete': true,
@@ -904,9 +804,112 @@ class _AddCarScreenState extends State<AddCarScreen> {
 
     await prefs.setString('car_listing_draft', jsonEncode(draft));
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Draft saved successfully!')),
     );
+  }
+
+  Future<void> checkAndLoadDraft() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? draftJson = prefs.getString('car_listing_draft');
+
+      if (draftJson != null && draftJson.isNotEmpty) {
+        final shouldLoad = await _showLoadDraftDialog();
+        if (shouldLoad == true) {
+          await _loadDraft(draftJson);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking draft: $e');
+    }
+  }
+
+  Future<bool?> _showLoadDraftDialog() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Draft Found'),
+          content: const Text(
+            'You have a saved draft. Would you like to continue from where you left off?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Start Fresh'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Load Draft'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _loadDraft(String draftJson) async {
+    try {
+      final draft = jsonDecode(draftJson) as Map<String, dynamic>;
+
+      setState(() {
+        _carBrands = draft['carBrand'];
+        _selectedModel = draft['selectedModel'];
+        _modelYear = draft['modelYear'];
+        _licensePlateController.text = draft['licensePlate'] ?? '';
+        _selectedFuelType = draft['selectedFuelType'];
+        _selectedTransmission = draft['selectedTransmission'];
+        _selectedBodyType = draft['selectedBodyType'];
+        _selectedColor = draft['selectedColor'];
+        _selectedSeats = draft['selectedSeats'] ?? 5;
+        _averageController.text = draft['average'] ?? '';
+        _dailyRateController.text = draft['dailyRate'] ?? '';
+        _descriptionController.text = draft['description'] ?? '';
+        _instantBooking = draft['instantBooking'] ?? true;
+        _isAvailable = draft['isAvailable'] ?? true;
+
+        // Load location data
+        if (draft['location'] != null) {
+          final locationParts = (draft['location'] as String).split(', ');
+          if (locationParts.length >= 2) {
+            _stateController.text = locationParts[0].trim();
+            _cityController.text = locationParts[1].trim();
+            if (locationParts.length > 2) {
+              _addressLine1Controller.text = locationParts[2].trim();
+            }
+            if (locationParts.length > 4) {
+              _landmarkController.text = locationParts[4].trim();
+            }
+            if (locationParts.length > 5) {
+              _zipCodeController.text = locationParts[5].trim();
+            }
+          }
+        }
+
+        // Load features
+        if (draft['selectedFeatures'] != null) {
+          selectedFeatures = Set<String>.from(draft['selectedFeatures']);
+        }
+
+        _isDraftLoaded = true;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Draft loaded successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error loading draft: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading draft: $e')),
+      );
+    }
   }
 
   Future<void> _clearDraft() async {
@@ -915,103 +918,126 @@ class _AddCarScreenState extends State<AddCarScreen> {
   }
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      if (_carImages.length < 5) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please upload at least 5 images.')),
-        );
-        return;
+    if (!_formKey.currentState!.validate()) return;
+
+    if (carImages.length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload at least 5 images.')),
+      );
+      return;
+    }
+
+    if (_carBrands == null ||
+        _selectedModel == null ||
+        _modelYear == null ||
+        _selectedFuelType == null ||
+        _selectedTransmission == null ||
+        _selectedBodyType == null ||
+        _selectedColor == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final hostedBy = authProvider.user!.name!;
+      final hostId = authProvider.user!.id;
+
+      final address = [
+        _addressLine1Controller.text,
+        _landmarkController.text,
+        _cityController.text,
+        _stateController.text,
+        _zipCodeController.text,
+        'India',
+      ].where((e) => e.trim().isNotEmpty).join(', ');
+
+      // 📍 Convert address → lat/lng
+      final carLocation = await getCarLocation(address);
+
+      final imageUrls = await uploadCarImages(carImages, hostId);
+      if (imageUrls.isEmpty) {
+        throw Exception('Image upload failed');
       }
 
-      if (_carBrands == null ||
-          _selectedModel == null ||
-          _modelYear == null ||
-          _selectedFuelType == null ||
-          _selectedTransmission == null ||
-          _selectedBodyType == null ||
-          _selectedColor == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill all required fields.')),
-        );
-        return;
+      final carData = {
+        'brand': _carBrands!,
+        'model': _selectedModel!,
+        'year': int.parse(_modelYear!),
+        'licensePlate': _licensePlateController.text.trim(),
+        'fuelType': _selectedFuelType!,
+        'transmission': _selectedTransmission!,
+        'category': _selectedBodyType!,
+        'color': _selectedColor!,
+        'seats': _selectedSeats,
+        'average': _averageController.text,
+        'hasActiveFastTag': _hasActiveFastTag,
+        'features': selectedFeatures.toList(),
+        'originalPrice': _dailyRateController.text,
+        'description': _descriptionController.text,
+        'instantBooking': _instantBooking,
+        'isAvailable': _isAvailable,
+        'hostedBy': hostedBy,
+        'hostId': hostId,
+        'rating': 0.0,
+        'reviews': 0,
+        'images': imageUrls,
+        'location': {
+          'type': 'Point',
+          'coordinates': [
+            carLocation.longitude, // ⚠️ lng first
+            carLocation.latitude,
+          ],
+          'address': address,
+        },
+      };
+
+      final token = await _apiService.getToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Authentication token not found');
       }
 
-      setState(() {
-        _isLoading = true;
-      });
+      await _apiService.createCarWithMap(carData, token);
 
-      try {
-        final location =
-            '${_stateController.text}, ${_cityController
-            .text}, ${_addressLine1Controller.text}, ${_addressLine2Controller
-            .text}, ${_landmarkController.text}, ${_zipCodeController.text}';
+      await _clearDraft();
 
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final String hostedBy = authProvider.user!.name.toString();
-        final String hostId = authProvider.user!.id;
+      if (!mounted) return;
 
-        // Create Car object
-        final newCar = Car(
-          //id: '', // Will be assigned by backend
-          brand: _carBrands!,
-          model: _selectedModel!,
-          year: int.parse(_modelYear!),
-          color: _selectedColor!,
-          licensePlate: _licensePlateController.text,
-          pricePerDay: double.parse(_dailyRateController.text),
-          seats: _selectedSeats,
-          transmission: _selectedTransmission!,
-          fuelType: _selectedFuelType!,
-          features: _selectedFeatures.toList(),
-          images: _carImages.map((file) => file.path).toList(),
-          location: location,
-          availability: _isAvailable,
-          category: _selectedBodyType!,
-          rating: 0,
-          originalPrice: _weeklyRateController.text,
-          distance: "",
-          hostedBy: hostedBy,
-          reviews: 0,
-          isFavorite: true,
-          isGuestFavorite: false,
-          hasActiveFastTag: true,
-          hostId: hostId,
-        );
-        final createdCar = await _apiService.createCar(newCar);
-        await _clearDraft();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Car listed successfully: ${createdCar.brand} ${createdCar
-                    .model}'),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Car listed successfully with ${imageUrls.length} images',
           ),
-        );
+        ),
+      );
 
-        Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error listing car: $e')),
-        );
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Error listing car: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error listing car: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
+
   @override
   void dispose() {
     _licensePlateController.dispose();
     _averageController.dispose();
     _dailyRateController.dispose();
-    _weeklyRateController.dispose();
-    _monthlyRateController.dispose();
     _descriptionController.dispose();
     _stateController.dispose();
     _cityController.dispose();
     _addressLine1Controller.dispose();
-    _addressLine2Controller.dispose();
     _landmarkController.dispose();
     _zipCodeController.dispose();
     _scrollController.dispose();

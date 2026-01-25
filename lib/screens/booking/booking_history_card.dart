@@ -156,7 +156,7 @@ class BookingHistoryCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                booking.pickupLocation,
+                                booking.pickUpLocation,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -189,7 +189,7 @@ class BookingHistoryCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                booking.dropoffLocation,
+                                booking.dropOffLocation,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -270,7 +270,7 @@ class BookingHistoryCard extends StatelessWidget {
               ),
 
               // Rating and Trips (if applicable)
-              if (booking.rating > 0 || booking.trips > 0) ...[
+              if (booking.rating > 0) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -285,9 +285,9 @@ class BookingHistoryCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (booking.rating > 0 && booking.trips > 0)
+                    if (booking.rating > 0 )
                       const SizedBox(width: 16),
-                    if (booking.trips > 0) ...[
+                    /*if (booking.trips > 0) ...[
                       const Icon(Icons.directions_car, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
@@ -297,7 +297,7 @@ class BookingHistoryCard extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
-                    ],
+                    ],*/
                   ],
                 ),
               ],
@@ -329,9 +329,9 @@ class BookingHistoryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: chipColor.withOpacity(0.3)),
+        border: Border.all(color: chipColor.withValues(alpha: 0.3)),
       ),
       child: Text(
         statusText,
@@ -362,7 +362,7 @@ class BookingHistoryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
