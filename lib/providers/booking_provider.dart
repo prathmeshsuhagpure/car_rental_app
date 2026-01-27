@@ -41,11 +41,9 @@ class BookingProvider with ChangeNotifier {
     Map<String, dynamic> result;
 
     try {
-      // Convert the BookingModel to JSON before sending to API
       result = await _apiService.createBooking(booking);
 
       if (result['success'] == true) {
-        // You may want to convert result['data'] to BookingModel again
         final newBooking = BookingModel.fromJson(result['data']);
         _bookings.add(newBooking);
       } else {

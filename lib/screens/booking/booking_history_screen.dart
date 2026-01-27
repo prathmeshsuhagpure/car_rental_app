@@ -1,10 +1,10 @@
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/booking_model.dart';
 import '../../providers/booking_provider.dart';
-import '../../utils/date_time_selection.dart';
 import 'booking_history_card.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
@@ -16,7 +16,6 @@ class BookingHistoryScreen extends StatefulWidget {
 
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   String selectedFilter = 'All';
-  final DateTimeSelectionService _dateTimeService = DateTimeSelectionService();
 
   final List<String> filterOptions = [
     'All',
@@ -270,6 +269,109 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   Widget _buildBookingDetailsBottomSheet(BookingModel booking) {
+    final car = booking.car;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Booking Details',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                _buildDetailRow(
+                  'Booking ID',
+                  booking.id.substring(0, 8).toUpperCase(),
+                ),
+
+                _buildDetailRow(
+                  'Car',
+                  car?.name ?? '—',
+                ),
+
+                _buildDetailRow(
+                  'Amount',
+                  '₹${booking.amount.toStringAsFixed(0)}',
+                ),
+
+                _buildDetailRow(
+                  'Duration',
+                  '${booking.durationInDays} day(s)',
+                ),
+
+                _buildDetailRow(
+                  'Pickup',
+                  booking.pickUpLocation,
+                ),
+
+                _buildDetailRow(
+                  'Drop-off',
+                  booking.dropOffLocation,
+                ),
+
+                _buildDetailRow(
+                  'Start Date',
+                  booking.formattedStartDate,
+                ),
+
+                _buildDetailRow(
+                  'End Date',
+                  booking.formattedEndDate,
+                ),
+
+                _buildDetailRow(
+                  'Booking Created',
+                  _formatDateTime(booking.createdAt),
+                ),
+
+                _buildDetailRow(
+                  'Booking Status',
+                  booking.bookingStatus.toUpperCase(),
+                ),
+
+                _buildDetailRow(
+                  'Payment Status',
+                  booking.paymentStatus.toUpperCase(),
+                ),
+
+                if (booking.paymentId != null)
+                  _buildDetailRow(
+                    'Payment ID',
+                    booking.paymentId!,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  /*Widget _buildBookingDetailsBottomSheet(BookingModel booking) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: const BoxDecoration(
@@ -320,7 +422,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -359,7 +461,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Cancel Booking'),
         content: Text(
-            'Are you sure you want to cancel booking ${booking.bookingId}?'),
+            'Are you sure you want to cancel booking ${booking.id}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -426,4 +528,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       ),
     );
   }
+
+  String _formatDateTime(DateTime dateTime) {
+    return DateFormat('MMM dd, yyyy • hh:mm a').format(dateTime);
+  }
+
+
 }

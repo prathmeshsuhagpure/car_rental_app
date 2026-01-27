@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/notification_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
-import '../../widgets/bottom_navigation_bar.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -56,8 +57,8 @@ class NotificationScreenState extends State<NotificationScreen>
   }
 
   Future<void> _initializeNotifications() async {
-    // Set up callbacks
-    _notificationService.setNotificationsChangedCallback((updatedNotifications) {
+    _notificationService
+        .setNotificationsChangedCallback((updatedNotifications) {
       setState(() {
         notifications = updatedNotifications;
       });
@@ -176,6 +177,9 @@ class NotificationScreenState extends State<NotificationScreen>
   }
 
   Widget _buildHeader() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    bool isHost = authProvider.isHost;
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
@@ -187,12 +191,8 @@ class NotificationScreenState extends State<NotificationScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 InkWell(
-                  onTap: (){
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => UserHomeScreen()),
-                    );
+                  onTap: () {
+                    Navigator.pushReplacementNamed(context, isHost ?'/host_home' : '/user_home');
                   },
                   child: Container(
                     padding: EdgeInsets.all(12),
@@ -360,11 +360,11 @@ class NotificationScreenState extends State<NotificationScreen>
             decoration: BoxDecoration(
               gradient: notification.isNew
                   ? LinearGradient(
-                colors: [
-                  notification.color.withValues(alpha: 0.1),
-                  notification.color.withValues(alpha: 0.05),
-                ],
-              )
+                      colors: [
+                        notification.color.withValues(alpha: 0.1),
+                        notification.color.withValues(alpha: 0.05),
+                      ],
+                    )
                   : null,
               color: notification.isNew ? null : Colors.grey[50],
               borderRadius: BorderRadius.circular(20),
@@ -558,32 +558,32 @@ class NotificationScreenState extends State<NotificationScreen>
                           ),
                         ),
                         SizedBox(height: 8),
-                        ...notification.payload.entries.map((entry) =>
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "${entry.key}: ",
+                        ...notification.payload.entries.map(
+                          (entry) => Padding(
+                            padding: EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${entry.key}: ",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    entry.value.toString(),
                                     style: TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[600],
+                                      color: Colors.grey[700],
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Text(
-                                      entry.value.toString(),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
+                          ),
                         ),
                       ],
                     ),

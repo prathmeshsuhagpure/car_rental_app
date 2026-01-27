@@ -1,3 +1,4 @@
+import 'package:car_rent_app/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -417,14 +418,19 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
                       content: Text(
                         result['message'] ??
                             (_isLoginMode
-                                ? "Login successful"
-                                : "Account created successfully"),
+                                ? (_isHost
+                                    ? "Host login successful"
+                                    : "User login successful")
+                                : (_isHost
+                                    ? "Host account created successfully"
+                                    : "User account created successfully")),
                       ),
-                      backgroundColor: const Color(0xFF059669),
+                      backgroundColor:
+                          _isHost ? Colors.blue : Color(0xFF059669),
                     ),
                   );
 
-                  if(result['success'] == true){
+                  if (result['success'] == true) {
                     final userId = authProvider.user!.id;
                     context.read<FavoritesProvider>().setUser(userId);
                   }
@@ -523,19 +529,18 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
     return Center(
       child: TextButton(
         onPressed: () {
-          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginScreen(),
+            ),
+          );
         },
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.arrow_back,
-              size: 18,
-              color: Color(0xFF059669),
-            ),
-            const SizedBox(width: 8),
             Text(
-              'Back to Phone Login',
+              'Login With Phone Number',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[400],

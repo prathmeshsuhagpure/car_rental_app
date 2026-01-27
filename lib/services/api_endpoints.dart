@@ -22,7 +22,14 @@ class ApiConstants {
   String imageUrl = '$baseUrl/';
 
   // Payments
-  static const createPayment ='/api/payments/createPayment';
+  // static const createPayment ='/api/payments/createPayment';
+
+  //Razorpay endpoints
+  static const String createRazorpayOrder = '/api/payments/razorpay/create-order';
+  static const String verifyRazorpayPayment = '/api/payments/razorpay/verify';
+  static const String getPaymentHistory = '/api/payments/history';
+  static const String getPaymentById = '/api/payments';
+  static const String refundPayment = '/api/payments/refund';
 
   // Car endpoints
   static const cars = '/api/cars';
@@ -38,4 +45,7 @@ class ApiConstants {
   // Review Routes
   static const submitReview = '/api/review';
   static const fetchReviews = '/api/reviews';
+
+  // Host Dashboard Routes
+  static const hostDashboard = '/api/host/dashboard';
 }

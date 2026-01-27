@@ -1,7 +1,9 @@
 import 'package:car_rent_app/providers/booking_provider.dart';
 import 'package:car_rent_app/providers/car_provider.dart';
 import 'package:car_rent_app/providers/favourites_provider.dart';
+import 'package:car_rent_app/providers/host_dashboard_provider.dart';
 import 'package:car_rent_app/providers/review_provider.dart';
+import 'package:car_rent_app/screens/auth/email_signup_screen.dart';
 import 'package:car_rent_app/screens/auth/login_screen.dart';
 import 'package:car_rent_app/screens/host_screens/host_home_screen.dart';
 import 'package:car_rent_app/services/api_service.dart';
@@ -51,6 +53,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CarProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => HostDashboardProvider()),
         ChangeNotifierProvider<DateTimeSelectionService>(
           create: (_) => DateTimeSelectionService(),
         ),
@@ -70,6 +73,7 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/user_home': (context) => const UserHomeScreen(),
           '/host_home': (context) => const HostHomeScreen(),
+          '/loginWithEmail' : (context) => const EmailSignupScreen(),
         },
         home: const SplashScreen(),
       ),

@@ -1,4 +1,3 @@
-import 'package:car_rent_app/models/payment_method_model.dart';
 import 'package:car_rent_app/services/payment_service.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:car_rent_app/widgets/price_breakup_sheet.dart';
@@ -6,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../models/booking_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -52,15 +52,31 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   final _cvvController = TextEditingController();
   final _zipController = TextEditingController();
 
-  //final paymentId = mongo.ObjectId().oid;
+  late Razorpay _razorpay;
 
   String _selectedCountry = 'India';
   bool _agreedToTerms = false;
   bool isLoading = false;
+  String? currentOrderId;
 
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _cardNumberController.dispose();
+    _expiryDateController.dispose();
+    _cvvController.dispose();
+    _zipController.dispose();
+    _razorpay.clear();
+    super.dispose();
   }
 
   double _calculateGST() {
@@ -72,28 +88,183 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   }
 
   double _calculateFinalAmount() {
-    return widget.amount + _calculateGST() + _calculatePlatformFee() + _securityDeposit();
+    return widget.amount +
+        _calculateGST() +
+        _calculatePlatformFee() +
+        _securityDeposit();
   }
 
-  double _securityDeposit (){
+  double _securityDeposit() {
     return 5000.0;
   }
 
-  @override
-  void dispose() {
-    _fullNameController.dispose();
-    _emailController.dispose();
-    _cardNumberController.dispose();
-    _expiryDateController.dispose();
-    _cvvController.dispose();
-    _zipController.dispose();
-    super.dispose();
+  // Handle Razorpay Payment Success
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      final bookingProvider =
+          Provider.of<BookingProvider>(context, listen: false);
+      final userProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUser = userProvider.user;
+
+      if (currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      final paymentService = PaymentService();
+      final verifyRes = await paymentService.verifyPayment(response);
+
+      if (verifyRes['success'] == true) {
+        // Create booking after successful payment verification
+        final totalAmount = _calculateFinalAmount();
+
+        final booking = BookingModel(
+          id: '',
+          userId: currentUser.id,
+          carId: widget.carId,
+          car: null,
+          amount: totalAmount,
+          pickUpLocation: widget.pickUpLocation,
+          dropOffLocation: widget.dropOffLocation,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          bookingStatus: 'active',
+          paymentStatus: 'completed',
+          paymentId: verifyRes['paymentId'],
+          createdAt: DateTime.now(),
+        );
+
+        final bookingResult = await bookingProvider.createBooking(booking);
+
+        if (bookingResult is Map<String, dynamic> &&
+            bookingResult['success'] == true) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Booking confirmed successfully!'),
+              backgroundColor: primaryGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+
+          // Navigate to home screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+            (route) => false,
+          );
+        } else {
+          throw Exception('Booking creation failed');
+        }
+      } else {
+        throw Exception('Payment verification failed');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
-  Future<void> _handlePayment() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  // Handle Razorpay Payment Error
+  void _handlePaymentError(PaymentFailureResponse response) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Payment Failed: ${response.message ?? 'Unknown error'}'),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  // Open Razorpay Checkout
+  void _openRazorpayCheckout() async {
+    try {
+      final userProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUser = userProvider.user;
+
+      if (currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Create order on your backend first
+      final paymentService = PaymentService();
+      final orderResponse = await paymentService.createRazorpayOrder(
+        amount: _calculateFinalAmount(),
+        currency: widget.currency,
+      );
+
+      if (orderResponse['success'] != true ||
+          orderResponse['orderId'] == null) {
+        throw Exception('Failed to create order');
+      }
+
+      currentOrderId = orderResponse['orderId'];
+
+      var options = {
+        'key': 'rzp_test_S8W9WfUPHAiIA9',
+        'amount': (_calculateFinalAmount() * 100).toInt(), // Amount in paise
+        'name': 'Car Rent App',
+        'description': 'Car Booking Payment',
+        'order_id': currentOrderId,
+        'currency': 'INR',
+        'prefill': {
+          'name': currentUser.name ?? _fullNameController.text.trim(),
+          'email': currentUser.email ?? _emailController.text.trim(),
+          'contact': currentUser.phoneNumber ?? '',
+        },
+        'theme': {'color': '#2E7D57'}
+      };
+
+      _razorpay.open(options);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  // Handle Card Payment (without Razorpay)
+  /*Future<void> _handleCardPayment() async {
+    if (!_formKey.currentState!.validate()) return;
 
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +273,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
       return;
@@ -114,9 +285,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
     try {
       final bookingProvider =
-          Provider.of<BookingProvider>(context, listen: false);
+      Provider.of<BookingProvider>(context, listen: false);
       final userProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = userProvider.user;
+
       if (currentUser == null) {
         throw Exception('User not logged in');
       }
@@ -135,48 +307,45 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       // Process payment first
       await PaymentService().submitPaymentForm(context, paymentData);
 
-      final totalAmount1 = _calculateFinalAmount();
+      final totalAmount = _calculateFinalAmount();
+
       final booking = BookingModel(
-        carId: widget.carId,
-        startDate: widget.startDate,
-        endDate: widget.endDate,
-        pickUpLocation: widget.pickUpLocation,
-        dropOffLocation: widget.dropOffLocation,
-        amount: totalAmount1,
-        paymentId: "",
         id: '',
         userId: currentUser.id,
-        carName: widget.carName,
-        rating: widget.rating,
-        paymentStatus: '',
-        bookingStatus: '',
-        status: 'active',
-        bookingDate: DateTime.now(),
+        carId: widget.carId,
+        car: null,
+        amount: totalAmount,
+        pickUpLocation: widget.pickUpLocation,
+        dropOffLocation: widget.dropOffLocation,
+        startDate: widget.startDate,
+        endDate: widget.endDate,
+        bookingStatus: 'pending',
+        paymentStatus: 'completed',
+        paymentId: null,
+        createdAt: DateTime.now(),
       );
 
       final bookingResult = await bookingProvider.createBooking(booking);
 
       if (bookingResult is Map<String, dynamic> &&
           bookingResult['success'] == true) {
-        if (mounted) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Booking confirmed successfully!'),
-              backgroundColor: primaryGreen,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+        if (!mounted) return;
 
-          // Navigate to home screen
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-            (route) => false,
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Booking confirmed successfully!'),
+            backgroundColor: primaryGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+              (route) => false,
+        );
       } else {
         final errorMsg = bookingResult is Map<String, dynamic>
             ? bookingResult['message']?.toString() ?? 'Booking failed'
@@ -184,17 +353,17 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         throw Exception(errorMsg);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red[600],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -202,6 +371,28 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         });
       }
     }
+  }*/
+
+  // Handle UPI Payment (PhonePe/Google Pay)
+  Future<void> _handleUPIPayment() async {
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please accept the terms and conditions'),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    _openRazorpayCheckout();
   }
 
   @override
@@ -301,10 +492,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2E7D57).withValues(alpha: 0.1),
+                              color: const Color(0xFF2E7D57)
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0xFF2E7D57).withValues(alpha: 0.2),
+                                color: const Color(0xFF2E7D57)
+                                    .withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -601,10 +794,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               // PhonePe Button
               _buildPaymentOption(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('PhonePe payment not implemented yet')),
-                  );
+                  _handleUPIPayment();
                 },
                 imagePath: 'assets/images/phonePe.jpg',
                 label: 'PhonePe',
@@ -669,7 +859,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : _handlePayment,
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          SnackBar(
+                            content:
+                                const Text('Card payment not implemented yet'),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: darkGreen,
                     shape: RoundedRectangleBorder(

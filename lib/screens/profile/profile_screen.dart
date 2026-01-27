@@ -1,7 +1,6 @@
 import 'package:car_rent_app/screens/profile/update_profile_screen.dart';
 import 'package:car_rent_app/services/api_endpoints.dart';
 import 'package:car_rent_app/utils/theme.dart';
-import 'package:car_rent_app/widgets/bottom_navigation_bar.dart';
 import 'package:car_rent_app/widgets/verify_profile_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -48,6 +47,9 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _handleLogout() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    bool isHost = authProvider.isHost;
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -58,14 +60,21 @@ class ProfileScreenState extends State<ProfileScreen> {
         ),
         content: const Text('Are you sure you want to logout?'),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isHost? Colors.blue[50] : accentGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
           ),
+          SizedBox(width: 25,),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGreen,
+              backgroundColor: isHost? Colors.red : primaryGreen,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -79,13 +88,12 @@ class ProfileScreenState extends State<ProfileScreen> {
     if (result != true) return;
 
     if (!mounted) return;
-    final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
 
     if (!mounted) return;
 
     Navigator.of(context).pushNamedAndRemoveUntil(
-      '/login',
+      '/loginWithEmail',
       (route) => false,
     );
   }
@@ -101,7 +109,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (authProvider == null || authProvider.user == null) {
-      return const SizedBox.shrink(); // or LoginScreen()
+      return const SizedBox.shrink();
     }
 
     final user = authProvider.user!.isHost;
@@ -295,11 +303,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => UserHomeScreen()),
-                        );
+                        Navigator.pushReplacementNamed(context, '/user_home');
                       },
                       child: Icon(
                         Icons.arrow_back,
@@ -481,11 +485,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => UserHomeScreen()),
-                        );
+                        Navigator.pushReplacementNamed(context, '/host_home');
                       },
                       child: Icon(
                         Icons.arrow_back,

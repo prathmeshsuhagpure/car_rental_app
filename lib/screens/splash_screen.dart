@@ -44,20 +44,18 @@ class SplashScreenState extends State<SplashScreen> {
         // Navigate based on user role
         if (user.role.toLowerCase() == 'host') {
           Navigator.pushReplacementNamed(context, '/host_home');
-        } else if (user.role.toLowerCase() == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin_home');
         } else {
           Navigator.pushReplacementNamed(context, '/user_home');
         }
       } else {
         await authProvider.forceLogout();
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/loginWithEmail');
       }
     } catch (e) {
       await authProvider.forceLogout();
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/loginWithEmail');
       }
     }
   }
