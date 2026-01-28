@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
 import '../models/car_model.dart';
+import '../models/earning_moedl.dart';
 import '../models/review_model.dart';
 import '../models/user_model.dart';
 import 'api_endpoints.dart';
@@ -16,11 +17,6 @@ class ApiService {
 
   String? _token;
   User? _cachedUserProfile;
-
-  /*void clearToken() {
-    _token = null;
-    _cachedUserProfile = null;
-  }*/
 
   void setToken(String? token) {
     _token = token;
@@ -38,7 +34,6 @@ class ApiService {
     }
 
     try {
-      // Make sure you're using the current token
       final response = await http.get(
         Uri.parse('$baseUrl${ApiConstants.getUserprofile}'),
         headers: headers,
@@ -469,41 +464,11 @@ class ApiService {
       }
     } catch (e) {
       debugPrint("Logout API failed: $e");
-      // Do NOT throw — logout must continue locally
     } finally {
-      // Only clear API-level memory
       _token = null;
     }
-
     return {'success': true};
   }
-
-  /*Future<Car> createCar(Car car) async {
-    try {
-      final carJson = car.toJson();
-      carJson.remove('_id'); // Remove MongoDB _id field
-      carJson.remove('id');
-      final headers = await getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl${ApiConstants.listCar}'),
-        headers: headers,
-        body: jsonEncode(car.toJson()),
-      );
-
-      if (response.statusCode == 201) {
-        // Car created successfully
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        return Car.fromJson(responseData['data']);
-      } else {
-        // Handle errors based on your backend's response format
-        final Map<String, dynamic> errorData = jsonDecode(response.body);
-        throw Exception(
-            'Failed to create car: ${errorData['message'] ?? response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Failed to connect to the server: $e');
-    }
-  }*/
 
   Future<void> sendFCMTokenToBackend(String token) async {
     try {
@@ -515,7 +480,7 @@ class ApiService {
         body: jsonEncode({"fcmToken": token}),
       );
     } catch (e) {
-      debugPrint('❌ Error sending FCM token: $e');
+      throw Exception('Error sending FCM token: $e');
     }
   }
 
@@ -689,4 +654,53 @@ class ApiService {
       throw Exception("Failed to load dashboard");
     }
   }
+
+  Future<List<Car>> fetchHostCars() async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse("$baseUrl${ApiConstants.hostCars}"),
+      headers: headers
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load cars');
+    }
+
+    final List data = json.decode(response.body);
+    return data.map((e) => Car.fromJson(e)).toList();
+  }
+
+  Future<List<BookingModel>> fetchHostBookings() async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse("$baseUrl${ApiConstants.hostBookings}"),
+      headers: headers
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load bookings');
+    }
+
+    final List data = json.decode(response.body);
+    return data.map((e) => BookingModel.fromJson(e)).toList();
+    }
+
+  Future<HostEarnings> fetchHostEarnings() async {
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse("$baseUrl${ApiConstants.hostEarnings}"),
+      headers: headers
+    );
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      print(response.statusCode);
+      final data = json.decode(response.body);
+      print("data: $data");
+      return HostEarnings.fromJson(data);
+    } else {
+      throw Exception("Failed to fetch earnings");
+    }
+  }
+
 }

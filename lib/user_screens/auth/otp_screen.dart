@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
-import '../host_screens/host_home_screen.dart';
+import '../../host_screens/host_home_screen.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;

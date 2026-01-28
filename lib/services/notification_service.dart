@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/notification_model.dart';
 
-
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Handling a background message: ${message.messageId}");
 }

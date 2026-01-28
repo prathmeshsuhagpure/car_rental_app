@@ -135,6 +135,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           paymentStatus: 'completed',
           paymentId: verifyRes['paymentId'],
           createdAt: DateTime.now(),
+          rentalStatus: "",
         );
 
         final bookingResult = await bookingProvider.createBooking(booking);

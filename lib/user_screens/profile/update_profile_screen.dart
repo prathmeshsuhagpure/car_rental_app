@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:car_rent_app/screens/profile/profile_screen.dart';
 import 'package:car_rent_app/services/api_service.dart';
+import 'package:car_rent_app/user_screens/profile/user_profile_screen.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -530,7 +530,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen()),
+                                  builder: (context) => const UserProfileScreen()),
                             );
                           },
                     style: ElevatedButton.styleFrom(

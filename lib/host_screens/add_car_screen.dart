@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:car_rent_app/providers/auth_provider.dart';
-import 'package:car_rent_app/screens/host_screens/helper/vehicle_registration_helper.dart';
 import 'package:car_rent_app/services/api_service.dart';
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../utils/helper.dart';
-import '../../utils/user_and_car_current_location.dart';
-import '../../widgets/car_images_uploads.dart';
+import '../utils/helper.dart';
+import '../utils/user_and_car_current_location.dart';
+import '../widgets/car_images_uploads.dart';
 import 'helper/location_helper.dart';
+import 'helper/vehicle_registration_helper.dart';
 
 class AddCarScreen extends StatefulWidget {
   const AddCarScreen({super.key});

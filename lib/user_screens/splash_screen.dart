@@ -64,15 +64,14 @@ class SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1B5E20),
-      // Dark green background matching DailyDrive
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF2E7D32), // Lighter green at top
-              Color(0xFF1B5E20), // Darker green at bottom
+              Color(0xFF2E7D32),
+              Color(0xFF1B5E20),
             ],
           ),
         ),

@@ -7,80 +7,6 @@ import 'api_endpoints.dart';
 class PaymentService {
   static String? baseUrl = ApiConstants.baseUrl;
 
-  // Submit card payment form
-/*  Future<Map<String, dynamic>> submitPaymentForm(
-      BuildContext context,
-      PaymentMethod data,
-      ) async {
-    try {
-      final headers = await ApiService().getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl${ApiConstants.createPayment}'),
-        headers: headers,
-        body: jsonEncode(data.toJson()),
-      );
-
-      final result = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (result['success'] == true) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment information saved successfully!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-          return {
-            'success': true,
-            'message': 'Payment saved successfully',
-            'data': result['data'],
-          };
-        } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result['message'] ?? 'Payment failed'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return {
-            'success': false,
-            'message': result['message'] ?? 'Payment failed',
-          };
-        }
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment failed: ${result['message'] ?? 'Unknown error'}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return {
-          'success': false,
-          'message': result['message'] ?? 'Payment failed',
-        };
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
-    }
-  }*/
-
   // Create Razorpay Order
   Future<Map<String, dynamic>> createRazorpayOrder({
     required double amount,
@@ -126,41 +52,6 @@ class PaymentService {
       };
     }
   }
-
-  // Verify Razorpay Payment
-  /*Future<Map<String, dynamic>> verifyPayment(
-      Map<String, dynamic> paymentData,
-      ) async {
-    try {
-      final headers = await ApiService().getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl${ApiConstants.verifyRazorpayPayment}'),
-        headers: headers,
-        body: jsonEncode(paymentData),
-      );
-
-      final result = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {
-          'success': result['success'] ?? false,
-          'message': result['message'] ?? 'Payment verification completed',
-          'paymentId': result['paymentId'],
-        };
-      } else {
-        print(result['message']);
-        return {
-          'success': false,
-          'message': result['message'] ?? 'Payment verification failed',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
-    }
-  }*/
 
   Future<Map<String, dynamic>> verifyPayment(
       PaymentSuccessResponse response,

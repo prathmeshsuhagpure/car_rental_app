@@ -1,10 +1,12 @@
-import 'package:car_rent_app/screens/host_screens/add_car_screen.dart';
-import 'package:car_rent_app/screens/notification/notification_screen.dart';
-import 'package:car_rent_app/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/host_dashboard_provider.dart';
+import '../models/host_dashboard_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/host_dashboard_provider.dart';
+import 'package:intl/intl.dart';
+import '../user_screens/notification/notification_screen.dart';
+import 'add_car_screen.dart';
+import 'host_profile_screen.dart';
 
 class HostHomeScreen extends StatefulWidget {
   const HostHomeScreen({super.key});
@@ -54,7 +56,8 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.directions_car, color: Colors.white, size: 20),
+            child:
+                const Icon(Icons.directions_car, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           const Column(
@@ -82,7 +85,8 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Color(0xFF666666)),
+          icon: const Icon(Icons.notifications_outlined,
+              color: Color(0xFF666666)),
           onPressed: () => Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const NotificationScreen()),
@@ -96,7 +100,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              MaterialPageRoute(builder: (_) => const HostProfileScreen()),
             ),
           ),
         ),
@@ -105,7 +109,8 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, HostDashboardProvider provider, String username) {
+  Widget _buildBody(
+      BuildContext context, HostDashboardProvider provider, String username) {
     return RefreshIndicator(
       onRefresh: () async {
         final auth = context.read<AuthProvider>();
@@ -113,14 +118,18 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Bottom padding for FAB
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        // Bottom padding for FAB
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcomeCard(username),
             const SizedBox(height: 24),
             _buildStatsGrid(provider),
-            const SizedBox(height: 32),
+            if (provider.totalCars > 0) ...[
+              _buildRentalStatusSection(provider),
+              const SizedBox(height: 24),
+            ],
             _buildQuickActions(context),
             const SizedBox(height: 32),
             _buildRecentActivity(provider),
@@ -188,29 +197,30 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
           Icons.directions_car,
           const Color(0xFF4CAF50),
         ),
-        _buildStatCard(
+        /*_buildStatCard(
           'Active Rentals',
           provider.activeRentals.toString(),
           Icons.key,
           const Color(0xFFFF9800),
-        ),
+        ),*/
         _buildStatCard(
           'This Month',
           '\$${provider.monthlyEarnings}',
           Icons.attach_money,
           const Color(0xFF9C27B0),
         ),
-        _buildStatCard(
+        /*_buildStatCard(
           'Rating',
-          '${provider.rating} ⭐',
+          '${provider.totalCars} ⭐',
           Icons.star,
           const Color(0xFFFFC107),
-        ),
+        ),*/
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -253,10 +263,303 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF666666),
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // New section: Rental Status
+  Widget _buildRentalStatusSection(HostDashboardProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Rental Status',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Show different UI based on number of cars
+        provider.hasSingleCar
+            ? _buildSingleCarRentalStatus(provider)
+            : _buildMultipleCarRentalStatus(provider),
+      ],
+    );
+  }
+
+  // UI for single car host
+  Widget _buildSingleCarRentalStatus(HostDashboardProvider provider) {
+    final car = provider.singleCarInfo;
+
+    if (car == null) {
+      return _buildEmptyRentalCard();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: car.statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(car.statusIcon, color: car.statusColor, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      car.displayStatus,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: car.statusColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${car.carName} ${car.carModel}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF666666),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (car.rentalStatus == 'active' ||
+              car.rentalStatus == 'upcoming') ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            _buildRentalDetails(car),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // UI for multiple cars host
+  Widget _buildMultipleCarRentalStatus(HostDashboardProvider provider) {
+    final activeOrUpcomingCars = provider.activeOrUpcomingCars;
+
+    if (activeOrUpcomingCars.isEmpty) {
+      return _buildEmptyRentalCard();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: activeOrUpcomingCars.length,
+        separatorBuilder: (context, index) =>
+            const Divider(height: 1, indent: 16, endIndent: 16),
+        itemBuilder: (context, index) {
+          final car = activeOrUpcomingCars[index];
+          return _buildCarRentalItem(car);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCarRentalItem(CarRentalInfo car) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: car.statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(car.statusIcon, color: car.statusColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${car.carName} ${car.carModel}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: car.statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        car.displayStatus,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: car.statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildRentalDetails(car),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRentalDetails(CarRentalInfo car) {
+    final dateFormat = DateFormat('MMM dd, yyyy');
+
+    return Column(
+      children: [
+        if (car.renterName != null)
+          _buildDetailRow(
+            Icons.person_outline,
+            'Renter',
+            car.renterName!,
+          ),
+        if (car.rentalStartDate != null)
+          _buildDetailRow(
+            Icons.calendar_today_outlined,
+            car.rentalStatus == 'active' ? 'Started' : 'Starts',
+            dateFormat.format(car.rentalStartDate!),
+          ),
+        if (car.rentalEndDate != null)
+          _buildDetailRow(
+            Icons.event_outlined,
+            'Ends',
+            dateFormat.format(car.rentalEndDate!),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF666666)),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF1A1A1A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyRentalCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.event_available,
+              size: 40,
+              color: Color(0xFF2196F3),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Active or Upcoming Rentals',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Your cars are available for booking',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+            ),
           ),
         ],
       ),
@@ -277,6 +580,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
         ),
         const SizedBox(height: 16),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -296,7 +600,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 'List a new vehicle for rent',
                 Icons.add_circle_outline,
                 const Color(0xFF2196F3),
-                    () => Navigator.push(
+                () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AddCarScreen()),
                 ),
@@ -307,9 +611,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 'View and edit your car listings',
                 Icons.car_rental,
                 const Color(0xFF9C27B0),
-                    () {
-                  // Navigate to manage cars screen
-                },
+                () {},
               ),
               const Divider(height: 24),
               _buildActionButton(
@@ -317,7 +619,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 'Check upcoming and past rentals',
                 Icons.calendar_today,
                 const Color(0xFF4CAF50),
-                    () {
+                () {
                   // Navigate to bookings screen
                 },
               ),
@@ -327,7 +629,7 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 'Track your rental income',
                 Icons.trending_up,
                 const Color(0xFFFF9800),
-                    () {
+                () {
                   // Navigate to earnings screen
                 },
               ),
@@ -339,12 +641,12 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
   }
 
   Widget _buildActionButton(
-      String title,
-      String subtitle,
-      IconData icon,
-      Color color,
-      VoidCallback onPressed,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(12),
@@ -419,60 +721,58 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
           ),
           child: provider.recentActivities.isNotEmpty
               ? Column(
-            children: provider.recentActivities
-                .asMap()
-                .entries
-                .map((entry) {
-              final index = entry.key;
-              final activity = entry.value;
-              return Column(
-                children: [
-                  _buildActivityItem(
-                    activity['title']!,
-                    activity['subtitle']!,
-                    Icons.check_circle,
-                    const Color(0xFF4CAF50),
-                  ),
-                  if (index < provider.recentActivities.length - 1)
-                    const Divider(height: 1, indent: 64),
-                ],
-              );
-            }).toList(),
-          )
+                  children:
+                      provider.recentActivities.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final activity = entry.value;
+                    return Column(
+                      children: [
+                        _buildActivityItem(
+                          activity['title']!,
+                          activity['subtitle']!,
+                          Icons.check_circle,
+                          const Color(0xFF4CAF50),
+                        ),
+                        if (index < provider.recentActivities.length - 1)
+                          const Divider(height: 1, indent: 64),
+                      ],
+                    );
+                  }).toList(),
+                )
               : const Padding(
-            padding: EdgeInsets.all(32.0),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 48,
-                    color: Color(0xFFCCCCCC),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    "No recent activity",
-                    style: TextStyle(
-                      color: Color(0xFF666666),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 48,
+                          color: Color(0xFFCCCCCC),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          "No recent activity",
+                          style: TextStyle(
+                            color: Color(0xFF666666),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                ),
         ),
       ],
     );
   }
 
   Widget _buildActivityItem(
-      String title,
-      String subtitle,
-      IconData icon,
-      Color color,
-      ) {
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(

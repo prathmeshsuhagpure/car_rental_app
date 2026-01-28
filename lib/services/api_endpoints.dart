@@ -21,9 +21,6 @@ class ApiConstants {
   // Get Profile Image End Point
   String imageUrl = '$baseUrl/';
 
-  // Payments
-  // static const createPayment ='/api/payments/createPayment';
-
   //Razorpay endpoints
   static const String createRazorpayOrder = '/api/payments/razorpay/create-order';
   static const String verifyRazorpayPayment = '/api/payments/razorpay/verify';
@@ -46,6 +43,10 @@ class ApiConstants {
   static const submitReview = '/api/review';
   static const fetchReviews = '/api/reviews';
 
-  // Host Dashboard Routes
+  // Host Routes
   static const hostDashboard = '/api/host/dashboard';
+  static const hostCars = '/api/host/cars';
+  static const hostBookings = '/api/host/bookings';
+  static const hostEarnings = '/api/host/hostEarnings';
+
 }

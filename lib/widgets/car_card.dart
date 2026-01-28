@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/car_model.dart';
 import '../providers/favourites_provider.dart';
-import '../screens/car/car_detail_screen.dart';
+import '../user_screens/car/car_detail_screen.dart';
 
 class CarCard extends StatefulWidget {
   final Car car;

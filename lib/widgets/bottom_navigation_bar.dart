@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../screens/booking/booking_history_screen.dart';
-import '../screens/car/car_list_screen.dart';
-import '../screens/home/user_home_screen.dart';
-import '../screens/profile/profile_screen.dart';
+import '../user_screens/booking/booking_history_screen.dart';
+import '../user_screens/car/car_list_screen.dart';
+import '../user_screens/home/user_home_screen.dart';
+import '../user_screens/profile/user_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -18,7 +18,7 @@ class UserHomeScreenState extends State<UserHomeScreen> {
     const HomeContent(),
     const CarListScreen(),
     const BookingHistoryScreen(),
-    const ProfileScreen(),
+    const UserProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
