@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/host_dashboard_model.dart';
-import '../providers/auth_provider.dart';
-import '../providers/host_dashboard_provider.dart';
+import '../../models/host_dashboard_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/host_dashboard_provider.dart';
 import 'package:intl/intl.dart';
 import '../user_screens/notification/notification_screen.dart';
 import 'add_car_screen.dart';

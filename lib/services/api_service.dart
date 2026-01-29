@@ -623,14 +623,14 @@ class ApiService {
   }
 
   Future<List<ReviewModel>> fetchReviews(String carId) async {
+    final headers = await getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl${ApiConstants.fetchReviews}/$carId'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers
     );
 
     if (response.statusCode != 200) {
+      print(response.body);
       throw Exception(
         'Failed to load reviews: ${response.body}',
       );
@@ -693,10 +693,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      print(response.body);
-      print(response.statusCode);
       final data = json.decode(response.body);
-      print("data: $data");
       return HostEarnings.fromJson(data);
     } else {
       throw Exception("Failed to fetch earnings");

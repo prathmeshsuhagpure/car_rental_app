@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../user_screens/booking/booking_history_screen.dart';
-import '../user_screens/car/car_list_screen.dart';
-import '../user_screens/home/user_home_screen.dart';
-import '../user_screens/profile/user_profile_screen.dart';
+import '../screens/user_screens/booking/booking_history_screen.dart';
+import '../screens/user_screens/car/car_list_screen.dart';
+import '../screens/user_screens/home/user_home_screen.dart';
+import '../screens/user_screens/profile/user_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -94,7 +94,6 @@ class UserHomeScreenState extends State<UserHomeScreen> {
               ],
             ),
           ),
-        )
-    );
+        ));
   }
 }

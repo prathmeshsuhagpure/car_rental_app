@@ -156,8 +156,8 @@ class User {
 */
 class User {
   final String id;
-  final String? name;
-  final String? email;
+  final String name;
+  final String email;
   final String? phoneNumber; // Changed to nullable since email users might not have phone
   final String role;
   final DateTime? createdAt;
@@ -173,8 +173,8 @@ class User {
 
   User({
     required this.id,
-    this.name,
-    this.email,
+    required this.name,
+    required this.email,
     this.phoneNumber, // Now nullable
     this.role = 'user',
     this.createdAt,

@@ -41,12 +41,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         child: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: textPrimary, size: 20),
-          onPressed:
-              () => /*Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => UserHomeScreen()),
-          ),*/
-                  Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/user_home');
+            }
+          },
         ),
       ),
       title: Text(

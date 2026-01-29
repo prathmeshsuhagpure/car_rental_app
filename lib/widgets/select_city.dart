@@ -14,6 +14,7 @@ Future<String?> showCitySelectionSheet(BuildContext context) async {
     'Coimbatore',
     'Indore',
   ];
+
   String searchQuery = '';
 
   return await showModalBottomSheet<String>(
@@ -26,8 +27,10 @@ Future<String?> showCitySelectionSheet(BuildContext context) async {
       return StatefulBuilder(
         builder: (context, setModalState) {
           final filteredCities = allCities
-              .where((city) =>
-              city.toLowerCase().contains(searchQuery.toLowerCase()))
+              .where(
+                (city) =>
+                city.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
               .toList();
 
           return Padding(
@@ -49,7 +52,6 @@ Future<String?> showCitySelectionSheet(BuildContext context) async {
                     decoration: const InputDecoration(
                       hintText: 'Search',
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
                     onChanged: (value) {
                       setModalState(() => searchQuery = value);
@@ -63,24 +65,15 @@ Future<String?> showCitySelectionSheet(BuildContext context) async {
                     itemCount: filteredCities.length,
                     itemBuilder: (context, index) {
                       final city = filteredCities[index];
-                      final isEnabled = city == 'Nagpur';
+                      //final isEnabled = city == 'Nagpur';
+                      final isEnabled = true;
 
                       return ListTile(
                         title: Text(city),
                         enabled: isEnabled,
-                        tileColor: isEnabled ? null : Colors.grey.shade300,
-                        onTap: () {
-                          if (isEnabled) {
-                            Navigator.pop(context, city); // Return city
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                Text('Only Nagpur is supported currently'),
-                              ),
-                            );
-                          }
-                        },
+                        tileColor:
+                        isEnabled ? null : Colors.grey.shade300,
+                        onTap: () => Navigator.pop(context, city)
                       );
                     },
                   ),
@@ -93,13 +86,3 @@ Future<String?> showCitySelectionSheet(BuildContext context) async {
     },
   );
 }
-
-
-/*void _openCitySelector() async {
-    final city = await showCitySelectionSheet(context);
-    if (city != null) {
-      setState(() {
-        selectedCity = city;
-      });
-    }
-  }*/

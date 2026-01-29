@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../models/country_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../services/api_service.dart';
-import '../../utils/helper.dart';
+import '../../../models/country_model.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../services/api_service.dart';
+import '../../../utils/helper.dart';
 import 'otp_screen.dart';
-import 'email_signup_screen.dart'; // Add this import
+import 'email_signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

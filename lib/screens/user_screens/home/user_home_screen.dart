@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/car_provider.dart';
-import '../../widgets/enhanced_car_card.dart';
-import '../../widgets/select_city.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/car_provider.dart';
+import '../../../widgets/enhanced_car_card.dart';
+import '../../../widgets/select_city.dart';
 import '../booking/booking_history_screen.dart';
 import '../booking/booking_screen.dart';
 import '../car/car_detail_screen.dart';
@@ -21,16 +22,26 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   String selectedCity = 'Nagpur';
 
+  Future<void> _loadSavedCity() async {
+    final prefs = await SharedPreferences.getInstance();
+    final city = prefs.getString('selectedCity');
+
+    if (city != null && mounted) {
+      setState(() {
+        selectedCity = city;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadSavedCity();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CarProvider>().loadCars(context);
     });
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +110,24 @@ class _HomeContentState extends State<HomeContent> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
-                  onTap: () => showCitySelectionSheet(context),
+                  onTap: () async {
+                    final city = await showCitySelectionSheet(context);
+
+                    if (city == null || !mounted) return;
+
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('selectedCity', city);
+
+                    setState(() {
+                      selectedCity = city;
+                    });
+
+                    context.read<CarProvider>().loadCars(context);
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -138,14 +162,15 @@ class _HomeContentState extends State<HomeContent> {
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                        Icon(Icons.keyboard_arrow_down,
+                            color: Colors.grey[600]),
                       ],
                     ),
                   ),
                 ),
-        
+
                 const SizedBox(height: 24),
-        
+
                 Container(
                   padding: const EdgeInsets.all(20.0),
                   decoration: BoxDecoration(
@@ -175,7 +200,9 @@ class _HomeContentState extends State<HomeContent> {
                           radius: 32,
                           backgroundColor: Colors.white,
                           child: Text(
-                            username.isNotEmpty ? username[0].toUpperCase() : 'U',
+                            username.isNotEmpty
+                                ? username[0].toUpperCase()
+                                : 'U',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
@@ -213,9 +240,9 @@ class _HomeContentState extends State<HomeContent> {
                     ],
                   ),
                 ),
-        
+
                 const SizedBox(height: 32),
-        
+
                 Text(
                   'Quick Actions',
                   style: const TextStyle(
@@ -250,7 +277,8 @@ class _HomeContentState extends State<HomeContent> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const BookingHistoryScreen()),
+                              builder: (context) =>
+                                  const BookingHistoryScreen()),
                         );
                       },
                     ),
@@ -375,9 +403,9 @@ class _HomeContentState extends State<HomeContent> {
                           },
                         ),
                 ),
-        
+
                 const SizedBox(height: 32),
-        
+
                 // Special Offers
                 const Text(
                   'Special Offers',

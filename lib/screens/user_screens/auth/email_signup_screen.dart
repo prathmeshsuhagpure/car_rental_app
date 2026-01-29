@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/favourites_provider.dart';
-import '../../widgets/bottom_navigation_bar.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/favourites_provider.dart';
+import '../../../widgets/bottom_navigation_bar.dart';
 import '../../host_screens/host_home_screen.dart';
 import 'login_screen.dart';
 

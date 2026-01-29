@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/car_model.dart';
 import '../providers/favourites_provider.dart';
-import '../user_screens/car/car_detail_screen.dart';
+import '../screens/user_screens/car/car_detail_screen.dart';
+
 
 class EnhancedCarCard extends StatefulWidget {
   final Car car;
@@ -108,9 +109,9 @@ class EnhancedCarCardState extends State<EnhancedCarCard>
                           decoration: BoxDecoration(
                             image: car.images != null && car.images.isNotEmpty
                                 ? DecorationImage(
-                                    image: FileImage(File(car.images[0])),
-                                    fit: BoxFit.cover,
-                                  )
+                              image: NetworkImage(car.images[0]), // ✅ Cloudinary URL
+                              fit: BoxFit.cover,
+                            )
                                 : null,
                             gradient: LinearGradient(
                               colors: [Colors.grey[100]!, Colors.grey[50]!],
@@ -118,6 +119,7 @@ class EnhancedCarCardState extends State<EnhancedCarCard>
                               end: Alignment.bottomCenter,
                             ),
                           ),
+
                           child: car.images == null || car.images.isEmpty
                               ? Icon(
                                   Icons.car_rental,

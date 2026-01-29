@@ -1,15 +1,15 @@
-import 'package:car_rent_app/host_screens/host_bookings_screen.dart';
-import 'package:car_rent_app/host_screens/host_earning_screen.dart';
 import 'package:car_rent_app/services/api_endpoints.dart';
-import 'package:car_rent_app/user_screens/profile/update_profile_screen.dart';
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/verify_profile_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
-import '../../host_screens/host_car_list_screen.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../user_screens/profile/update_profile_screen.dart';
+import 'host_bookings_screen.dart';
+import 'host_car_list_screen.dart';
+import 'host_earning_screen.dart';
 
 class HostProfileScreen extends StatefulWidget {
   const HostProfileScreen({super.key});

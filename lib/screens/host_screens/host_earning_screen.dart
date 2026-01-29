@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/earning_moedl.dart';
-import '../services/api_service.dart';
+import '../../models/earning_moedl.dart';
+import '../../services/api_service.dart';
 
 class HostEarningsScreen extends StatelessWidget {
   const HostEarningsScreen({super.key});

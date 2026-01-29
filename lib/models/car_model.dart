@@ -3,6 +3,7 @@ class CarLocation {
   final double longitude;
   final String address;
 
+
   CarLocation({
     required this.latitude,
     required this.longitude,
@@ -10,22 +11,36 @@ class CarLocation {
   });
 
   factory CarLocation.fromJson(Map<String, dynamic> json) {
+    final coordinates = json['coordinates'];
+
     return CarLocation(
-      latitude: (json['lat'] ?? 0).toDouble(),
-      longitude: (json['lng'] ?? 0).toDouble(),
+      latitude: (coordinates[1] as num).toDouble(), // lat
+      longitude: (coordinates[0] as num).toDouble(), // lng
       address: json['address'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'lat': latitude,
-      'lng': longitude,
+      'type': 'Point',
+      'coordinates': [longitude, latitude],
       'address': address,
     };
   }
-}
 
+  String get state {
+    final parts = address.split(',');
+    if (parts.length < 2) return '';
+    return parts[parts.length - 3].trim();
+  }
+
+  String get pincode {
+    final match = RegExp(r'\b\d{6}\b').firstMatch(address);
+    return match?.group(0) ?? '';
+  }
+
+  String get stateWithPincode => '$state - $pincode';
+}
 
 class Car {
   final String id;
@@ -115,44 +130,25 @@ class Car {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'brand': brand,
-      'model': model,
-      'year': year,
-      'licensePlate': licensePlate,
-      'fuelType': fuelType,
-      'transmission': transmission,
-      'category': category,
-      'color': color,
-      'seats': seats,
-      'average': average,
-      'hasActiveFastTag': hasActiveFastTag,
-      'features': features,
-      'originalPrice': originalPrice,
-      'location': location.toJson(),
-      'description': description,
-      'instantBooking': instantBooking,
-      'isAvailable': isAvailable,
-      'images': images,
-      'hostedBy': hostedBy,
-      'hostId': hostId,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'rating': rating,
-      'reviews': reviews,
-    };
-  }
+  // ---------- Derived values ----------
+
+  double get latitude => location.latitude;
+  double get longitude => location.longitude;
 
   String get title => "$brand $model $year";
-
   String get name => "$brand $model";
-
-  String get subTitle => "$transmission $fuelType $seats";
 
   double get offerPrice => originalPrice * 0.8;
 
-  String get formattedDistance =>
-      distanceKm == null ? '' : "${distanceKm!.toStringAsFixed(2)} km";
+  String get formattedDistance {
+    if (distanceKm == null) return '';
+
+    if (distanceKm! < 1) {
+      return '${(distanceKm! * 1000).round()} m';
+    } else if (distanceKm! < 10) {
+      return '${distanceKm!.toStringAsFixed(1)} km';
+    } else {
+      return '${distanceKm!.round()} km';
+    }
+  }
 }

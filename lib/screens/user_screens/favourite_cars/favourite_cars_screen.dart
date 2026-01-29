@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/car_model.dart';
-import '../../providers/car_provider.dart';
-import '../../providers/favourites_provider.dart';
-import '../../widgets/custom_app_bar.dart';
+import '../../../models/car_model.dart';
+import '../../../providers/car_provider.dart';
+import '../../../providers/favourites_provider.dart';
+import '../../../widgets/custom_app_bar.dart';
 import '../car/car_detail_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -107,8 +107,8 @@ class FavoritesScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         image: car.images != null && car.images.isNotEmpty
                             ? DecorationImage(
-                                image: FileImage(File(car.images[0])),
-                                fit: BoxFit.contain,
+                                image: NetworkImage((car.images[0])),
+                                fit: BoxFit.cover,
                               )
                             : null,
                         gradient: LinearGradient(

@@ -1,12 +1,12 @@
 import 'dart:io';
+import 'package:car_rent_app/screens/user_screens/profile/user_profile_screen.dart';
 import 'package:car_rent_app/services/api_service.dart';
-import 'package:car_rent_app/user_screens/profile/user_profile_screen.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../utils/theme.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../utils/theme.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -228,7 +228,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           'gender': _selectedGender,
           'dateOfBirth': dobString,
         });
-
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -530,7 +529,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const UserProfileScreen()),
+                                builder: (context) => const UserProfileScreen(),
+                              ),
                             );
                           },
                     style: ElevatedButton.styleFrom(

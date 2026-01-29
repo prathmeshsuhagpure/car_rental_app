@@ -1,6 +1,6 @@
 import 'package:car_rent_app/models/booking_model.dart';
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class HostBookingsScreen extends StatefulWidget {
   const HostBookingsScreen({super.key});

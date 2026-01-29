@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import '../../providers/car_provider.dart';
-import '../../utils/date_time_selection.dart';
-import '../../utils/helper.dart';
-import '../../utils/location_selector.dart';
-import '../../utils/theme.dart';
-import '../../widgets/car_card.dart';
-import '../../widgets/custom_app_bar.dart';
+import '../../../providers/car_provider.dart';
+import '../../../utils/date_time_selection.dart';
+import '../../../utils/helper.dart';
+import '../../../utils/location_selector.dart';
+import '../../../utils/theme.dart';
+import '../../../widgets/car_list_screen_card.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class CarListScreen extends StatefulWidget {
   final String? selectedLocation;
@@ -15,6 +16,7 @@ class CarListScreen extends StatefulWidget {
   final DateTime? endDate;
   final TimeOfDay? endTime;
   final bool? deliveryPickup;
+  final Position? userPosition;
 
   const CarListScreen({
     super.key,
@@ -24,6 +26,7 @@ class CarListScreen extends StatefulWidget {
     this.endDate,
     this.endTime,
     this.deliveryPickup,
+    this.userPosition,
   });
 
   @override
@@ -37,29 +40,36 @@ class _CarListScreenState extends State<CarListScreen>
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late DateTimeSelectionService _dateTimeService;
+  //DateTimeSelectionService _dateTimeService;
   final TextEditingController _locationController = TextEditingController();
 
   String _searchQuery = '';
-  final String _selectedCategory = '';
+  String selectedCategory = '';
   String _selectedSort = 'Default';
 
   String _currentLocation = '';
-  //bool _currentDeliveryPickup = false;
 
   final List<Map<String, dynamic>> _filters = [
-    {'label': 'Filters', 'icon': Icons.tune, 'selected': false},
+    {
+      'label': 'Filters',
+      'icon': Icons.tune,
+      'selected': false,
+    },
     {
       'label': 'Zoomcar Assured',
       'icon': Icons.verified_user,
-      'selected': false
+      'selected': false,
     },
     {
       'label': 'Home Delivery',
       'icon': Icons.local_shipping_outlined,
-      'selected': false
+      'selected': false,
     },
-    {'label': 'Guest Favourite', 'icon': Icons.star_rounded, 'selected': true},
+    {
+      'label': 'Guest Favourite',
+      'icon': Icons.star_rounded,
+      'selected': true,
+    },
   ];
 
   final List<String> _sortOptions = [
@@ -71,34 +81,19 @@ class _CarListScreenState extends State<CarListScreen>
   ];
 
   @override
+  @override
   void initState() {
     super.initState();
-    _dateTimeService = Provider.of<DateTimeSelectionService>(context, listen: false);
-
-    // Set the service values with the passed parameters
-    if (widget.startDate != null) {
-      _dateTimeService.tripStartDate = widget.startDate!;
-    }
-    if (widget.startTime != null) {
-      _dateTimeService.tripStartTime = widget.startTime!;
-    }
-    if (widget.endDate != null) {
-      _dateTimeService.tripEndDate = widget.endDate!;
-    }
-    if (widget.endTime != null) {
-      _dateTimeService.tripEndTime = widget.endTime!;
-    }
-
-    _currentLocation = widget.selectedLocation ?? 'Select Location';
-    //_currentDeliveryPickup = widget.deliveryPickup ?? false;
 
     _searchController = TextEditingController();
+    _currentLocation = widget.selectedLocation ?? 'Select Location';
 
     // Initialize animations
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -107,29 +102,49 @@ class _CarListScreenState extends State<CarListScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+    );
 
     // Start animations
     _fadeController.forward();
     _slideController.forward();
 
-    // Load cars when screen initializes
+    /// 🔥 ALL PROVIDER WORK GOES HERE
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CarProvider>(context, listen: false).loadCars(context);
+      final dateTimeService =
+      context.read<DateTimeSelectionService>();
+
+      if (widget.startDate != null) {
+        dateTimeService.tripStartDate = widget.startDate!;
+      }
+      if (widget.startTime != null) {
+        dateTimeService.tripStartTime = widget.startTime!;
+      }
+      if (widget.endDate != null) {
+        dateTimeService.tripEndDate = widget.endDate!;
+      }
+      if (widget.endTime != null) {
+        dateTimeService.tripEndTime = widget.endTime!;
+      }
+
+      context.read<CarProvider>().loadCars(context);
     });
   }
 
+
   Future<void> _handleLocationTap() async {
     final selectedLocation =
-    await showLocationSuggestions(context, locationSuggestions);
+        await showLocationSuggestions(context, locationSuggestions);
     if (selectedLocation != null && selectedLocation.isNotEmpty) {
       setState(() {
         _currentLocation = selectedLocation;
       });
+      Provider.of<CarProvider>(context).setCity(selectedLocation);
     }
   }
 
@@ -186,17 +201,17 @@ class _CarListScreenState extends State<CarListScreen>
               ),
             ),
             ..._sortOptions.map((option) => ListTile(
-              title: Text(option),
-              trailing: _selectedSort == option
-                  ? const Icon(Icons.check, color: Color(0xFF2E7D32))
-                  : null,
-              onTap: () {
-                setState(() {
-                  _selectedSort = option;
-                });
-                Navigator.pop(context);
-              },
-            )),
+                  title: Text(option),
+                  trailing: _selectedSort == option
+                      ? const Icon(Icons.check, color: Color(0xFF2E7D32))
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _selectedSort = option;
+                    });
+                    Navigator.pop(context);
+                  },
+                )),
             const SizedBox(height: 20),
           ],
         ),
@@ -210,7 +225,7 @@ class _CarListScreenState extends State<CarListScreen>
       appBar: CustomAppBar(
         title: "Select Car",
         iconButton: IconButton(
-          icon: const Icon(Icons.more_horiz, color: textPrimary),
+          icon: const Icon(Icons.more_vert, color: textPrimary),
           onPressed: () {},
         ),
       ),
@@ -222,17 +237,13 @@ class _CarListScreenState extends State<CarListScreen>
             position: _slideAnimation,
             child: Column(
               children: [
-                // Fixed Location Header - This stays at the top always
                 _buildLocationHeader(),
-                // Expanded scrollable content
                 Expanded(
                   child: CustomScrollView(
                     slivers: [
-                      // Non-sticky title section
                       SliverToBoxAdapter(
                         child: _buildTitleSection(),
                       ),
-                      // Sticky header containing search and filters
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _StickyHeaderDelegate(
@@ -262,8 +273,9 @@ class _CarListScreenState extends State<CarListScreen>
   }
 
   Widget _buildLocationHeader() {
+    final dateTimeService = context.watch<DateTimeSelectionService>();
     return ChangeNotifierProvider.value(
-        value: _dateTimeService,
+        value: dateTimeService,
         child: Consumer<DateTimeSelectionService>(
           builder: (context, dateTimeService, child) {
             return Container(
@@ -564,7 +576,7 @@ class _CarListScreenState extends State<CarListScreen>
                 children: [
                   CircularProgressIndicator(
                     valueColor:
-                    AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
+                        AlwaysStoppedAnimation<Color>(Color(0xFF2E7D32)),
                     strokeWidth: 3,
                   ),
                   SizedBox(height: 16),
@@ -602,16 +614,49 @@ class _CarListScreenState extends State<CarListScreen>
   }
 
   List<dynamic> _getFilteredCars(CarProvider carProvider) {
-    List<dynamic> filteredCars = carProvider.cars;
+    List<dynamic> filteredCars = List.from(carProvider.cars);
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
-      filteredCars = carProvider.searchCars(_searchQuery);
+      filteredCars = filteredCars.where((car) {
+        return car.brand.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            car.model.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            car.category.toLowerCase().contains(_searchQuery.toLowerCase());
+      }).toList();
     }
 
-    // Apply category filter
-    if (_selectedCategory.isNotEmpty) {
-      filteredCars = carProvider.filterByCategory(_selectedCategory);
+    if (selectedCategory.isNotEmpty) {
+      filteredCars = filteredCars.where((car) {
+        return car.category.toLowerCase() == selectedCategory.toLowerCase();
+      }).toList();
+    }
+
+    final homeDelivery =
+        _filters.firstWhere((f) => f['label'] == 'Home Delivery')['selected'];
+    if (homeDelivery) {
+      filteredCars =
+          filteredCars.where((car) => car.deliveryAvailable).toList();
+    }
+
+    // 🔃 SORTING
+    switch (_selectedSort) {
+      case 'Price: Low to High':
+        filteredCars.sort((a, b) => a.originalPrice.compareTo(b.originalPrice));
+        break;
+
+      case 'Price: High to Low':
+        filteredCars.sort((a, b) => b.originalPrice.compareTo(a.originalPrice));
+        break;
+
+      case 'Popularity':
+        filteredCars.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+
+      case 'Newest First':
+        filteredCars.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+
+      default:
+        break;
     }
 
     return filteredCars;
@@ -754,7 +799,7 @@ class _CarListScreenState extends State<CarListScreen>
           padding: const EdgeInsets.all(16),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
-                  (context, index) {
+              (context, index) {
                 final car = cars[index];
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -798,13 +843,15 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   _StickyHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 130; // Minimum height when collapsed (search + filters)
+  double get minExtent =>
+      130; // Minimum height when collapsed (search + filters)
 
   @override
   double get maxExtent => 130; // Maximum height when expanded
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 
@@ -843,8 +890,8 @@ class FilterChip extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: isSelected
                 ? LinearGradient(
-              colors: [Colors.orange[400]!, Colors.orange[600]!],
-            )
+                    colors: [Colors.orange[400]!, Colors.orange[600]!],
+                  )
                 : null,
             color: isSelected ? null : Colors.white,
             borderRadius: BorderRadius.circular(22),

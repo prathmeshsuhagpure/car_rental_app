@@ -1,15 +1,19 @@
+import 'package:car_rent_app/screens/user_screens/profile/update_profile_screen.dart';
 import 'package:car_rent_app/services/api_endpoints.dart';
-import 'package:car_rent_app/user_screens/profile/update_profile_screen.dart';
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/verify_profile_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
-import '../../models/user_model.dart';
-import '../../providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../widgets/select_city.dart';
 
 class UserProfileScreen extends StatefulWidget {
-  const UserProfileScreen({super.key});
+  const UserProfileScreen({
+    super.key,
+  });
 
   @override
   UserProfileScreenState createState() => UserProfileScreenState();
@@ -19,6 +23,21 @@ class UserProfileScreenState extends State<UserProfileScreen> {
   final ApiConstants _apiConstants = ApiConstants();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   late final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+  String selectedCity = 'Nagpur';
+
+  @override
+  void initState() {
+    _loadSavedCity();
+    super.initState();
+  }
+
+  Future<void> _loadSavedCity() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      selectedCity = prefs.getString('selectedCity') ?? 'Nagpur';
+    });
+  }
 
   void _handleLogout() async {
     final result = await showDialog<bool>(
@@ -59,9 +78,24 @@ class UserProfileScreenState extends State<UserProfileScreen> {
     );
 
     if (result != true) return;
-    await authProvider.logout();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      await authProvider.logout();
+    } catch (_) {
+      throw Exception("Something went wrong");
+    }
 
     if (!mounted) return;
+    Navigator.of(context).pop();
+
     Navigator.of(context).pushNamedAndRemoveUntil(
       '/loginWithEmail',
       (route) => false,
@@ -164,7 +198,7 @@ class UserProfileScreenState extends State<UserProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          user.name ?? '',
+                          user.name,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -214,9 +248,20 @@ class UserProfileScreenState extends State<UserProfileScreen> {
                     buildModernTileSection(
                       context,
                       "Change City",
-                      "Bangalore",
+                      selectedCity,
                       Icons.location_on,
-                      () {},
+                      () async {
+                        final city = await showCitySelectionSheet(context);
+
+                        if (city == null || !context.mounted) return;
+
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('selectedCity', city);
+
+                        setState(() {
+                          selectedCity = city;
+                        });
+                      },
                     ),
                     buildModernTileSection(
                       context,

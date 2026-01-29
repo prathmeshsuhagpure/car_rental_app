@@ -1,13 +1,15 @@
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import '../../models/car_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/review_provider.dart';
-import '../../utils/date_time_selection.dart';
-import '../../widgets/full_screen_image_viewer.dart';
-import '../../widgets/show_add_review_dialog.dart';
+import '../../../models/car_model.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/review_provider.dart';
+import '../../../utils/date_time_selection.dart';
+import '../../../widgets/full_screen_image_viewer.dart';
+import '../../../widgets/show_add_review_dialog.dart';
 import '../payment/payment_screen.dart';
 
 class CarDetailScreen extends StatefulWidget {
@@ -314,6 +316,81 @@ class CarDetailScreenState extends State<CarDetailScreen>
     );
   }
 
+  Widget _buildLocationTab() {
+    final LatLng carLocation = LatLng(
+      widget.car.latitude,
+      widget.car.longitude,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 200,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: carLocation,
+                initialZoom: 14,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.yourcompany.car_rent_app',
+                  subdomains: const ['a', 'b', 'c'],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: carLocation,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Color(0xFF3B82F6),
+                        size: 36,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Icon(Icons.location_on, color: Color(0xFF3B82F6)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.car.formattedDistance,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'The exact location will be shared after booking confirmation.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPhotosTab() {
     return Column(
       children: [
@@ -564,74 +641,91 @@ class CarDetailScreenState extends State<CarDetailScreen>
           ],
         ),
         const SizedBox(height: 20),
-        ...List.generate(
-          3,
-          (index) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        Consumer<ReviewProvider>(
+          builder: (context, reviewProvider, _) {
+            // Loading
+            if (reviewProvider.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            // Error
+            if (reviewProvider.error != null) {
+              return const SizedBox();
+            }
+
+            // No reviews → render nothing
+            if (reviewProvider.reviews.isEmpty) {
+              return const SizedBox();
+            }
+
+            return Column(
+              children: reviewProvider.reviews.map((review) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: const Color(0xFF3B82F6),
-                        child: Text(
-                          'U${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'User ${index + 1}',
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: const Color(0xFF3B82F6),
+                            child: Text(
+                              review.userName[0].toUpperCase(),
                               style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
                               ),
                             ),
-                            Row(
-                              children: List.generate(
-                                5,
-                                (i) => Icon(
-                                  Icons.star,
-                                  size: 14,
-                                  color:
-                                      i < 4 ? Colors.amber : Colors.grey[300],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  review.userName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F172A),
+                                  ),
                                 ),
-                              ),
+                                Row(
+                                  children: List.generate(
+                                    5,
+                                    (i) => Icon(
+                                      Icons.star,
+                                      size: 14,
+                                      color: i < review.rating
+                                          ? Colors.amber
+                                          : Colors.grey[300],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        review.comment,
+                        style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    index == 0
-                        ? 'Excellent car condition and very responsive host!'
-                        : index == 1
-                            ? 'Great experience, would book again.'
-                            : 'Clean car and pickup was on time.',
-                    style: const TextStyle(
-                      color: Color(0xFF475569),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              }).toList(),
             );
           },
         ),
@@ -654,55 +748,242 @@ class CarDetailScreenState extends State<CarDetailScreen>
     );
   }
 
-  Widget _buildLocationTab() {
+  /*Widget _buildLocationTab() {
+    final LatLng carLocation = LatLng(
+      widget.car.location.latitude,
+      widget.car.location.longitude,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Map Card
         Container(
-          height: 200,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map, size: 50, color: Colors.grey),
-                SizedBox(height: 8),
-                Text('Map View', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const Icon(Icons.location_on, color: Color(0xFF3B82F6)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                widget.car.formattedDistance,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 220,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: carLocation,
+                  zoom: 14,
                 ),
+                markers: {
+                  Marker(
+                    markerId: const MarkerId('car_location'),
+                    position: carLocation,
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueBlue,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: widget.car.name,
+                      snippet: widget.car.location.address,
+                    ),
+                  ),
+                },
+                zoomControlsEnabled: false,
+                myLocationButtonEnabled: false,
+                mapToolbarEnabled: false,
+                compassEnabled: false,
+                rotateGesturesEnabled: false,
+                scrollGesturesEnabled: true,
+                tiltGesturesEnabled: false,
+                zoomGesturesEnabled: true,
               ),
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 12),
-        const Text(
-          'The exact location will be shared after booking confirmation.',
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 14,
+
+        const SizedBox(height: 16),
+
+        // Location Info Card
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF3B82F6).withOpacity(0.05),
+                const Color(0xFF3B82F6).withOpacity(0.02),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFF3B82F6).withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              // Distance Row (if available)
+              if (widget.car.distanceKm != null) ...[
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.directions_car_rounded,
+                        color: Color(0xFF3B82F6),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.car.formattedDistance,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const Text(
+                            'Distance from you',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(
+                  color: Colors.grey.shade300,
+                  height: 1,
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // Address Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      color: Color(0xFF3B82F6),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'General Area',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.car.location.address.isNotEmpty
+                              ? widget.car.location.address
+                              : 'Location available',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Privacy Notice
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF3C7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFFF59E0B).withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.shield_outlined,
+                  color: Colors.amber.shade800,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Privacy Protected',
+                      style: TextStyle(
+                        color: Color(0xFF92400E),
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'The exact pickup location will be shared after booking confirmation for your safety and security.',
+                      style: TextStyle(
+                        color: Color(0xFF92400E),
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
-  }
+  }*/
 
   Widget _buildBenefitsTab() {
     final benefits = [
@@ -900,6 +1181,9 @@ class CarDetailScreenState extends State<CarDetailScreen>
                         endDate: _dateTimeService.tripEndDate,
                         pickUpLocation: widget.car.location.address,
                         dropOffLocation: widget.car.location.address,
+                        carId: widget.car.id,
+                        currency: "INR",
+                        amount: widget.car.originalPrice,
                       ),
                     ),
                   );

@@ -3,12 +3,12 @@ import 'package:car_rent_app/providers/car_provider.dart';
 import 'package:car_rent_app/providers/favourites_provider.dart';
 import 'package:car_rent_app/providers/host_dashboard_provider.dart';
 import 'package:car_rent_app/providers/review_provider.dart';
+import 'package:car_rent_app/screens/host_screens/host_home_screen.dart';
+import 'package:car_rent_app/screens/splash_screen.dart';
+import 'package:car_rent_app/screens/user_screens/auth/email_signup_screen.dart';
+import 'package:car_rent_app/screens/user_screens/auth/login_screen.dart';
 import 'package:car_rent_app/services/api_service.dart';
 import 'package:car_rent_app/services/notification_service.dart';
-import 'package:car_rent_app/user_screens/auth/email_signup_screen.dart';
-import 'package:car_rent_app/user_screens/auth/login_screen.dart';
-import 'package:car_rent_app/host_screens/host_home_screen.dart';
-import 'package:car_rent_app/user_screens/splash_screen.dart';
 import 'package:car_rent_app/utils/date_time_selection.dart';
 import 'package:car_rent_app/widgets/bottom_navigation_bar.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -60,8 +60,7 @@ class MyApp extends StatelessWidget {
         // 👇 DEPENDENT provider (FIXED)
         ChangeNotifierProxyProvider<ApiService, ReviewProvider>(
           create: (_) => ReviewProvider(null),
-          update: (_, apiService, previous) =>
-              ReviewProvider(apiService),
+          update: (_, apiService, previous) => ReviewProvider(apiService),
         ),
       ],
       child: MaterialApp(
@@ -73,7 +72,7 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/user_home': (context) => const UserHomeScreen(),
           '/host_home': (context) => const HostHomeScreen(),
-          '/loginWithEmail' : (context) => const EmailSignupScreen(),
+          '/loginWithEmail': (context) => const EmailSignupScreen(),
         },
         home: const SplashScreen(),
       ),
