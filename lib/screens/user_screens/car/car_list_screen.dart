@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/car_provider.dart';
-import '../../../utils/date_time_selection.dart';
+import '../../../providers/date_time_selection_provider.dart';
 import '../../../utils/helper.dart';
 import '../../../utils/location_selector.dart';
 import '../../../utils/theme.dart';
@@ -117,19 +117,22 @@ class _CarListScreenState extends State<CarListScreen>
     /// 🔥 ALL PROVIDER WORK GOES HERE
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dateTimeService =
-      context.read<DateTimeSelectionService>();
+      context.read<DateTimeSelectionProvider>();
 
-      if (widget.startDate != null) {
-        dateTimeService.tripStartDate = widget.startDate!;
+      // 1️⃣ If start date & time are provided → update start properly
+      if (widget.startDate != null && widget.startTime != null) {
+        dateTimeService.updateStartDateTime(
+          widget.startDate!,
+          widget.startTime!,
+        );
       }
-      if (widget.startTime != null) {
-        dateTimeService.tripStartTime = widget.startTime!;
-      }
-      if (widget.endDate != null) {
-        dateTimeService.tripEndDate = widget.endDate!;
-      }
-      if (widget.endTime != null) {
-        dateTimeService.tripEndTime = widget.endTime!;
+
+      // 2️⃣ If end date & time are provided → update end only if valid
+      if (widget.endDate != null && widget.endTime != null) {
+        dateTimeService.updateEndDateTime(
+          widget.endDate!,
+          widget.endTime!,
+        );
       }
 
       context.read<CarProvider>().loadCars(context);
@@ -273,10 +276,10 @@ class _CarListScreenState extends State<CarListScreen>
   }
 
   Widget _buildLocationHeader() {
-    final dateTimeService = context.watch<DateTimeSelectionService>();
+    final dateTimeService = context.watch<DateTimeSelectionProvider>();
     return ChangeNotifierProvider.value(
         value: dateTimeService,
-        child: Consumer<DateTimeSelectionService>(
+        child: Consumer<DateTimeSelectionProvider>(
           builder: (context, dateTimeService, child) {
             return Container(
               margin: const EdgeInsets.all(16),
@@ -793,7 +796,7 @@ class _CarListScreenState extends State<CarListScreen>
   }
 
   Widget _buildCarsGrid(List<dynamic> cars) {
-    return Consumer<DateTimeSelectionService>(
+    return Consumer<DateTimeSelectionProvider>(
       builder: (context, dateTimeService, child) {
         return SliverPadding(
           padding: const EdgeInsets.all(16),

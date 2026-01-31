@@ -10,7 +10,6 @@ import '../../../services/payment_service.dart';
 import '../../../utils/theme.dart';
 import '../../../widgets/booking_card.dart';
 import '../../../widgets/bottom_navigation_bar.dart';
-import '../../../widgets/custom_app_bar.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({
@@ -24,6 +23,7 @@ class PaymentScreen extends StatefulWidget {
     required this.carId,
     required this.amount,
     required this.currency,
+    this.booking,
   });
 
   final String currency;
@@ -35,6 +35,7 @@ class PaymentScreen extends StatefulWidget {
   final DateTime endDate;
   final String pickUpLocation;
   final String dropOffLocation;
+  final BookingModel? booking;
 
   @override
   State<PaymentScreen> createState() => PaymentScreenState();
@@ -49,11 +50,11 @@ class PaymentScreenState extends State<PaymentScreen> {
   String? currentOrderId;
 
   int get _durationInDays {
-    final days = widget.endDate.difference(widget.startDate).inDays;
-    return days <= 0 ? 1 : days;
+    final diff = widget.endDate.difference(widget.startDate);
+    return (diff.inHours / 24).ceil().clamp(1, 365) + 1;
   }
 
-  double get _totalAmount {
+  double get rentalAmount {
     return widget.car.originalPrice * _durationInDays;
   }
 
@@ -66,7 +67,7 @@ class PaymentScreenState extends State<PaymentScreen> {
       userId: widget.user.id,
       carId: widget.car.id,
       car: widget.car,
-      amount: _totalAmount,
+      amount: (_calculateFinalAmount()).toDouble(),
       pickUpLocation: widget.pickUpLocation,
       dropOffLocation: widget.dropOffLocation,
       startDate: widget.startDate,
@@ -94,7 +95,7 @@ class PaymentScreenState extends State<PaymentScreen> {
   }
 
   double _calculateGST() {
-    return widget.amount * 0.18; // 18% GST
+    return rentalAmount * 0.18; // 18% GST
   }
 
   double _calculatePlatformFee() {
@@ -106,7 +107,7 @@ class PaymentScreenState extends State<PaymentScreen> {
   }
 
   double _calculateFinalAmount() {
-    return widget.amount +
+    return rentalAmount +
         _calculateGST() +
         _calculatePlatformFee() +
         _securityDeposit();
@@ -119,7 +120,7 @@ class PaymentScreenState extends State<PaymentScreen> {
       });
 
       final bookingProvider =
-          Provider.of<BookingProvider>(context, listen: false);
+      Provider.of<BookingProvider>(context, listen: false);
       final userProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = userProvider.user;
 
@@ -131,7 +132,6 @@ class PaymentScreenState extends State<PaymentScreen> {
       final verifyRes = await paymentService.verifyPayment(response);
 
       if (verifyRes['success'] == true) {
-        // Create booking after successful payment verification
         final totalAmount = _calculateFinalAmount();
 
         final booking = BookingModel(
@@ -167,17 +167,15 @@ class PaymentScreenState extends State<PaymentScreen> {
             ),
           );
 
-          // Navigate to home screen
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-            (route) => false,
+                (route) => false,
           );
         } else {
           throw Exception('Booking creation failed');
         }
       } else {
-        print(Exception('Payment verification failed'));
         throw Exception('Payment verification failed');
       }
     } catch (e) {
@@ -189,7 +187,7 @@ class PaymentScreenState extends State<PaymentScreen> {
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } finally {
@@ -258,15 +256,13 @@ class PaymentScreenState extends State<PaymentScreen> {
       _razorpay.open(options);
     } catch (e) {
       if (!mounted) return;
-
-      print("error in _openRazorpayCheckout: ${e.toString()}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red[600],
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
 
@@ -279,215 +275,129 @@ class PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: CustomAppBar(
-        title: 'Complete Payment',
-        iconButton: IconButton(
-          icon: const Icon(Icons.more_horiz, color: textPrimary),
-          onPressed: () {
-            _showOptionsMenu(context);
-          },
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          onPressed: () => Navigator.pop(context),
         ),
+        title: const Text(
+          'Complete Payment',
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.help_outline_rounded,
+                size: 20,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            onPressed: () => _showHelpDialog(context),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 24),
               child: Column(
                 children: [
-                  const SizedBox(height: 8),
-
-                  // Booking Card
+                  const SizedBox(height: 16),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.blue.shade100,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.verified_user_rounded,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Secure Payment',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Your payment information is encrypted and secure',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   BookingCard(
                     booking: booking,
                     car: widget.car,
+                    showPaymentSummary: true,
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Payment Summary Card
-                  _buildPaymentSummary(),
-
-                  const SizedBox(height: 20),
-
-                  // Payment Methods Info
-                  _buildPaymentMethodsInfo(),
-
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
-
-          // Bottom Payment Section
           _buildBottomPaymentSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentSummary() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFFFFF), Color(0xFFF8F9FA)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.receipt_long,
-                  color: Color(0xFF4CAF50),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Payment Summary',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildSummaryRow(
-            'Rental Duration',
-            '$_durationInDays ${_durationInDays == 1 ? 'Day' : 'Days'}',
-            icon: Icons.calendar_today,
-          ),
-          const SizedBox(height: 16),
-          _buildSummaryRow(
-            'Price per day',
-            '₹${widget.car.originalPrice.toStringAsFixed(0)}',
-            icon: Icons.payments_outlined,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.grey.shade300,
-                  Colors.grey.shade200,
-                  Colors.grey.shade300,
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildSummaryRow(
-            'Total Amount',
-            '₹${_totalAmount.toStringAsFixed(0)}',
-            isTotal: true,
-            icon: Icons.account_balance_wallet,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(
-    String label,
-    String value, {
-    bool isTotal = false,
-    IconData? icon,
-  }) {
-    return Row(
-      children: [
-        if (icon != null) ...[
-          Icon(
-            icon,
-            size: isTotal ? 20 : 16,
-            color: isTotal ? const Color(0xFF4CAF50) : const Color(0xFF9CA3AF),
-          ),
-          const SizedBox(width: 12),
-        ],
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 15,
-              fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
-              color:
-                  isTotal ? const Color(0xFF1A1A1A) : const Color(0xFF6B7280),
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 20 : 15,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isTotal ? const Color(0xFF4CAF50) : const Color(0xFF1A1A1A),
-            letterSpacing: isTotal ? -0.5 : 0,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaymentMethodsInfo() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF0EA5E9).withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.info_outline,
-              color: Color(0xFF0EA5E9),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Pay securely using Cards, UPI, Wallets & Net Banking',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF075985),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -497,9 +407,10 @@ class PaymentScreenState extends State<PaymentScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -511,7 +422,6 @@ class PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Terms and Conditions Checkbox
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -524,7 +434,7 @@ class PaymentScreenState extends State<PaymentScreen> {
                     color: _agreedToTerms
                         ? const Color(0xFF4CAF50).withValues(alpha: 0.05)
                         : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: _agreedToTerms
                           ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
@@ -552,10 +462,10 @@ class PaymentScreenState extends State<PaymentScreen> {
                         ),
                         child: _agreedToTerms
                             ? const Icon(
-                                Icons.check,
-                                size: 16,
-                                color: Colors.white,
-                              )
+                          Icons.check_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        )
                             : null,
                       ),
                       const SizedBox(width: 14),
@@ -563,9 +473,9 @@ class PaymentScreenState extends State<PaymentScreen> {
                         child: RichText(
                           text: const TextSpan(
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: Color(0xFF374151),
-                              height: 1.4,
+                              height: 1.5,
                             ),
                             children: [
                               TextSpan(text: 'I agree to the '),
@@ -594,10 +504,7 @@ class PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Razorpay Payment Button
               SizedBox(
                 width: double.infinity,
                 height: 58,
@@ -617,70 +524,67 @@ class PaymentScreenState extends State<PaymentScreen> {
                   ),
                   child: _isProcessing
                       ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
                       : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.lock_outline,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Pay ₹${_totalAmount.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const Text(
-                                  'via Razorpay',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pay ₹${_calculateFinalAmount().toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const Text(
+                            'Secure Payment via Razorpay',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              // Secure Payment Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.verified_user,
+                    Icons.shield_outlined,
                     size: 16,
                     color: Colors.grey.shade600,
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '100% Secure Payment • Powered by Razorpay',
+                    '100% Secure Payment • SSL Encrypted',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -696,45 +600,89 @@ class PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  void _showOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.help_outline),
-                title: const Text('Help & Support'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to help screen
-                },
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long),
-                title: const Text('View Booking Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Show booking details
-                },
+              child: Icon(
+                Icons.help_outline_rounded,
+                color: const Color(0xFF4CAF50),
               ),
-              ListTile(
-                leading: const Icon(Icons.share),
-                title: const Text('Share'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Share booking
-                },
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Payment Help',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHelpItem(
+              'How is the total calculated?',
+              'Rental amount + GST (18%) + Platform fee + Refundable security deposit',
+            ),
+            const SizedBox(height: 16),
+            _buildHelpItem(
+              'When will I get my deposit back?',
+              'The security deposit will be refunded within 7 days after you return the car in good condition.',
+            ),
+            const SizedBox(height: 16),
+            _buildHelpItem(
+              'Is my payment secure?',
+              'Yes, all payments are processed through Razorpay with bank-level encryption.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Got it',
+              style: TextStyle(
+                color: Color(0xFF4CAF50),
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpItem(String question, String answer) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          question,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          answer,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade600,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 }

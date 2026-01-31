@@ -7,9 +7,6 @@ import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../user_screens/profile/update_profile_screen.dart';
-import 'host_bookings_screen.dart';
-import 'host_car_list_screen.dart';
-import 'host_earning_screen.dart';
 
 class HostProfileScreen extends StatefulWidget {
   const HostProfileScreen({super.key});
@@ -87,7 +84,12 @@ class HostProfileScreenState extends State<HostProfileScreen> {
           return Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               final user = authProvider.user;
-              return _buildFullHostProfile(context, user!);
+              if (user == null) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              return _buildFullHostProfile(context, user);
             },
           );
         },
@@ -168,7 +170,7 @@ class HostProfileScreenState extends State<HostProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          user.name ?? '',
+                          user.name,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -213,33 +215,6 @@ class HostProfileScreenState extends State<HostProfileScreen> {
                 children: [
                   const SizedBox(height: 20),
                   _modernSectionContainer([
-                    buildModernTileSection(context, "My Listings",
-                        "View and manage your cars", Icons.home_work, () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) {
-                          return const HostCarListScreen();
-                        }),
-                      );
-                    }),
-                    buildModernTileSection(context, "Bookings Received",
-                        "All bookings", Icons.calendar_today, () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) {
-                          return const HostBookingsScreen();
-                        }),
-                      );
-                    }),
-                    buildModernTileSection(context, "Earnings",
-                        "Your earnings summary", Icons.attach_money, () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HostEarningsScreen(),
-                        ),
-                      );
-                    }),
 /*                    buildModernTileSection(context, "Reviews",
                         "View guest feedback", Icons.rate_review, () {}),*/
                     buildModernTileSection(

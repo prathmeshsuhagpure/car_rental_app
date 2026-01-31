@@ -118,8 +118,12 @@ class UserProfileScreenState extends State<UserProfileScreen> {
           return Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               final user = authProvider.user;
-
-              return _buildFullProfileUI(context, user!);
+              if (user == null) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              return _buildFullProfileUI(context, user);
             },
           );
         },

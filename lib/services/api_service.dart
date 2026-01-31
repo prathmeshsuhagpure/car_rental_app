@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
 import '../models/car_model.dart';
-import '../models/earning_moedl.dart';
+import '../models/earning_model.dart';
 import '../models/review_model.dart';
 import '../models/user_model.dart';
 import 'api_endpoints.dart';
@@ -337,21 +337,34 @@ class ApiService {
   Future<Map<String, dynamic>> cancelBooking(String bookingId) async {
     try {
       final headers = await getHeaders();
-      final response = await http.delete(
-        Uri.parse('$baseUrl${ApiConstants.bookings}/$bookingId'),
+
+      final uri = Uri.parse(
+        '$baseUrl${ApiConstants.cancelBooking}/$bookingId/cancel',
+      );
+
+      final response = await http.put(
+        uri,
         headers: headers,
       );
+
       if (response.statusCode == 200) {
-        return {'success': true, 'message': 'Booking cancelled successfully'};
+        return {
+          'success': true,
+          'message': 'Booking cancelled successfully',
+        };
       } else {
+        final body = jsonDecode(response.body);
         return {
           'success': false,
-          'message': jsonDecode(response.body)['message'] ??
-              'Failed to cancel booking',
+          'message': body['message'] ?? 'Failed to cancel booking',
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
+      print("Error cancelling booking: $e");
+      return {
+        'success': false,
+        'message': 'Network error: $e',
+      };
     }
   }
 
@@ -625,9 +638,8 @@ class ApiService {
   Future<List<ReviewModel>> fetchReviews(String carId) async {
     final headers = await getHeaders();
     final response = await http.get(
-      Uri.parse('$baseUrl${ApiConstants.fetchReviews}/$carId'),
-      headers: headers
-    );
+        Uri.parse('$baseUrl${ApiConstants.fetchReviews}/$carId'),
+        headers: headers);
 
     if (response.statusCode != 200) {
       print(response.body);
@@ -657,10 +669,8 @@ class ApiService {
 
   Future<List<Car>> fetchHostCars() async {
     final headers = await getHeaders();
-    final response = await http.get(
-      Uri.parse("$baseUrl${ApiConstants.hostCars}"),
-      headers: headers
-    );
+    final response = await http
+        .get(Uri.parse("$baseUrl${ApiConstants.hostCars}"), headers: headers);
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load cars');
@@ -673,23 +683,37 @@ class ApiService {
   Future<List<BookingModel>> fetchHostBookings() async {
     final headers = await getHeaders();
     final response = await http.get(
-      Uri.parse("$baseUrl${ApiConstants.hostBookings}"),
-      headers: headers
-    );
+        Uri.parse("$baseUrl${ApiConstants.hostBookings}"),
+        headers: headers);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load bookings');
+    final decoded = jsonDecode(response.body);
+
+    // 🔍 Debug (keep this once)
+    print('RAW RESPONSE: ${decoded['data']}');
+    print('DATA TYPE: ${decoded['data'].runtimeType}');
+
+    if (decoded['success'] != true) {
+      throw Exception(decoded['message'] ?? 'Failed to fetch bookings');
     }
 
-    final List data = json.decode(response.body);
-    return data.map((e) => BookingModel.fromJson(e)).toList();
+    final data = decoded['data'];
+
+    if (data is List) {
+      return data.map((e) => BookingModel.fromJson(e)).toList();
     }
+
+    if (data is Map<String, dynamic>) {
+      return [BookingModel.fromJson(data)];
+    }
+
+    throw Exception('Unexpected booking data format');
+  }
 
   Future<HostEarnings> fetchHostEarnings() async {
     final headers = await getHeaders();
     final response = await http.get(
       Uri.parse("$baseUrl${ApiConstants.hostEarnings}"),
-      headers: headers
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
@@ -700,4 +724,30 @@ class ApiService {
     }
   }
 
+  Future<void> deleteCar(String carId) async {
+    final headers = await getHeaders();
+    final response = await http.delete(
+      Uri.parse("$baseUrl${ApiConstants.deleteCar}/$carId"),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete car: ${response.body}');
+    }
+  }
+
+  Future<void> updateCarAvailability(String carId, bool isAvailable) async {
+    final headers = await getHeaders();
+    final response = await http.patch(
+      Uri.parse('$baseUrl${ApiConstants.updateCarAvailability}/$carId/availability'),
+      headers: headers,
+      body: jsonEncode({
+        'isAvailable': isAvailable,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update car availability: ${response.body}');
+    }
+  }
 }

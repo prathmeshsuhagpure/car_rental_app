@@ -20,24 +20,13 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       TextEditingController();
   final TextEditingController _nameController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
+
   bool _isLoading = false;
   bool _isHost = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoginMode = true;
-
-  bool get _isFormValid {
-    if (_isLoginMode) {
-      return _emailController.text.trim().isNotEmpty &&
-          _passwordController.text.trim().isNotEmpty;
-    } else {
-      return _nameController.text.trim().isNotEmpty &&
-          _emailController.text.trim().isNotEmpty &&
-          _passwordController.text.trim().isNotEmpty &&
-          _confirmPasswordController.text.trim().isNotEmpty &&
-          _passwordController.text == _confirmPasswordController.text;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,17 +148,24 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
             ),
           ),
           const SizedBox(height: 40),
-          if (!_isLoginMode) ...[
-            _buildNameInput(),
-            const SizedBox(height: 24),
-          ],
-          _buildEmailInput(),
-          const SizedBox(height: 24),
-          _buildPasswordInput(),
-          if (!_isLoginMode) ...[
-            const SizedBox(height: 24),
-            _buildConfirmPasswordInput(),
-          ],
+          Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                if (!_isLoginMode) ...[
+                  _buildNameInput(),
+                  const SizedBox(height: 24),
+                ],
+                _buildEmailInput(),
+                const SizedBox(height: 24),
+                _buildPasswordInput(),
+                if (!_isLoginMode) ...[
+                  const SizedBox(height: 24),
+                  _buildConfirmPasswordInput(),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           _buildHostCheckbox(),
           const SizedBox(height: 32),
@@ -190,8 +186,14 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
         border: Border.all(color: const Color(0xFF475569), width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: _nameController,
+        validator: (value) {
+          if (!_isLoginMode && (value == null || value.isEmpty)) {
+            return 'Name is required';
+          }
+          return null;
+        },
         onChanged: (_) => setState(() {}),
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
@@ -213,8 +215,18 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
         border: Border.all(color: const Color(0xFF475569), width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: _emailController,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Email is required';
+          }
+          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+          if (!emailRegex.hasMatch(value.trim())) {
+            return 'Enter a valid email address';
+          }
+          return null;
+        },
         onChanged: (_) => setState(() {}),
         keyboardType: TextInputType.emailAddress,
         style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -237,10 +249,19 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
         border: Border.all(color: const Color(0xFF475569), width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: _passwordController,
         onChanged: (_) => setState(() {}),
         obscureText: _obscurePassword,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Password is required';
+          }
+          if (value.length < 6) {
+            return 'Password must be at least 6 characters';
+          }
+          return null;
+        },
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Password',
@@ -274,10 +295,16 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
         border: Border.all(color: const Color(0xFF475569), width: 1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: _confirmPasswordController,
         onChanged: (_) => setState(() {}),
         obscureText: _obscureConfirmPassword,
+        validator: (value) {
+          if (!_isLoginMode && value != _passwordController.text) {
+            return 'Passwords do not match';
+          }
+          return null;
+        },
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Confirm Password',
@@ -370,8 +397,11 @@ class EmailSignupScreenState extends State<EmailSignupScreen> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (_isFormValid && !_isLoading)
+        onPressed: (!_isLoading)
             ? () async {
+                if (!_formKey.currentState!.validate()) {
+                  return;
+                }
                 setState(() {
                   _isLoading = true;
                 });

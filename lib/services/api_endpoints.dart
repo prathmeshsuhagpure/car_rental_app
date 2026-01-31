@@ -32,11 +32,13 @@ class ApiConstants {
   static const cars = '/api/cars';
   static String getCar(String id) => '$baseUrl/cars/$id';
   static const listCar = '/api/cars';
+  static const deleteCar = '/api/cars';
+  static const updateCarAvailability = '/api/cars';
 
   // Booking endpoints
   static const bookings = '/api/bookings';
   static String getBooking(String id) => '$baseUrl/bookings/$id';
-  static String cancelBooking(String id) => '$baseUrl/bookings/$id/cancel';
+  static String cancelBooking = '/api/bookings';
   static const allBookings = '/api/bookings/all';
 
   // Review Routes

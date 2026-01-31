@@ -2,7 +2,7 @@ import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../utils/date_time_selection.dart';
+import '../../../providers/date_time_selection_provider.dart';
 import '../../../utils/helper.dart';
 import '../../../utils/location_selector.dart';
 import '../../../utils/theme.dart';
@@ -26,12 +26,12 @@ class BookingScreenState extends State<BookingScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late DateTimeSelectionService _dateTimeService;
+  late DateTimeSelectionProvider _dateTimeService;
 
   @override
   void initState() {
     super.initState();
-    _dateTimeService = DateTimeSelectionService();
+    _dateTimeService = DateTimeSelectionProvider();
 
     _animationController = AnimationController(
       vsync: this,

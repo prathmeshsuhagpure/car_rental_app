@@ -512,9 +512,17 @@ class AddCarScreenState extends State<AddCarScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.airline_seat_recline_normal, color: Colors.grey[600]),
+              Icon(
+                Icons.airline_seat_recline_normal,
+                color: Colors.grey[600],
+              ),
               const SizedBox(width: 8),
-              const Text('Number of Seats'),
+              const Expanded(
+                child: Text(
+                  'Number of Seats',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),

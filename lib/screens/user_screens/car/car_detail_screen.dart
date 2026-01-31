@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../models/car_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/review_provider.dart';
-import '../../../utils/date_time_selection.dart';
+import '../../../providers/date_time_selection_provider.dart';
 import '../../../widgets/full_screen_image_viewer.dart';
 import '../../../widgets/show_add_review_dialog.dart';
 import '../payment/payment_screen.dart';
@@ -36,7 +36,7 @@ class CarDetailScreenState extends State<CarDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
-  final DateTimeSelectionService _dateTimeService = DateTimeSelectionService();
+  final DateTimeSelectionProvider _dateTimeService = DateTimeSelectionProvider();
 
   final List<GlobalKey> _sectionKeys = List.generate(6, (index) => GlobalKey());
 
@@ -54,23 +54,25 @@ class CarDetailScreenState extends State<CarDetailScreen>
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dateTimeService = context.read<DateTimeSelectionService>();
+      final dateTimeService = context.read<DateTimeSelectionProvider>();
 
-      if (widget.startDate != null) {
-        dateTimeService.tripStartDate = widget.startDate!;
+      if (widget.startDate != null && widget.startTime != null) {
+        dateTimeService.updateStartDateTime(
+          widget.startDate!,
+          widget.startTime!,
+        );
       }
-      if (widget.startTime != null) {
-        dateTimeService.tripStartTime = widget.startTime!;
-      }
-      if (widget.endDate != null) {
-        dateTimeService.tripEndDate = widget.endDate!;
-      }
-      if (widget.endTime != null) {
-        dateTimeService.tripEndTime = widget.endTime!;
+
+      if (widget.endDate != null && widget.endTime != null) {
+        dateTimeService.updateEndDateTime(
+          widget.endDate!,
+          widget.endTime!,
+        );
       }
 
       context.read<ReviewProvider>().fetchReviews(widget.car.id);
     });
+
 
     _tabController = TabController(length: 6, vsync: this);
     _scrollController = ScrollController()..addListener(_onScroll);

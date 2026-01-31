@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/host_dashboard_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/host_dashboard_provider.dart';
+import '../../providers/host_provider.dart';
 import 'package:intl/intl.dart';
 import '../user_screens/notification/notification_screen.dart';
 import 'add_car_screen.dart';
+import 'host_bookings_screen.dart';
+import 'manage_cars_screen.dart';
+import 'host_earning_screen.dart';
 import 'host_profile_screen.dart';
 
 class HostHomeScreen extends StatefulWidget {
@@ -197,24 +200,12 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
           Icons.directions_car,
           const Color(0xFF4CAF50),
         ),
-        /*_buildStatCard(
-          'Active Rentals',
-          provider.activeRentals.toString(),
-          Icons.key,
-          const Color(0xFFFF9800),
-        ),*/
         _buildStatCard(
           'This Month',
-          '\$${provider.monthlyEarnings}',
-          Icons.attach_money,
+          '₹ ${provider.monthlyEarnings}',
+          Icons.currency_rupee,
           const Color(0xFF9C27B0),
         ),
-        /*_buildStatCard(
-          'Rating',
-          '${provider.totalCars} ⭐',
-          Icons.star,
-          const Color(0xFFFFC107),
-        ),*/
       ],
     );
   }
@@ -286,7 +277,6 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        // Show different UI based on number of cars
         provider.hasSingleCar
             ? _buildSingleCarRentalStatus(provider)
             : _buildMultipleCarRentalStatus(provider),
@@ -294,14 +284,11 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
     );
   }
 
-  // UI for single car host
   Widget _buildSingleCarRentalStatus(HostDashboardProvider provider) {
     final car = provider.singleCarInfo;
-
     if (car == null) {
       return _buildEmptyRentalCard();
     }
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -611,7 +598,14 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 'View and edit your car listings',
                 Icons.car_rental,
                 const Color(0xFF9C27B0),
-                () {},
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) {
+                      return const ManageCarsScreen();
+                    }),
+                  );
+                },
               ),
               const Divider(height: 24),
               _buildActionButton(
@@ -620,7 +614,12 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 Icons.calendar_today,
                 const Color(0xFF4CAF50),
                 () {
-                  // Navigate to bookings screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) {
+                      return const HostBookingsScreen();
+                    }),
+                  );
                 },
               ),
               const Divider(height: 24),
@@ -630,7 +629,12 @@ class _HostHomeScreenState extends State<HostHomeScreen> {
                 Icons.trending_up,
                 const Color(0xFFFF9800),
                 () {
-                  // Navigate to earnings screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HostEarningsScreen(),
+                    ),
+                  );
                 },
               ),
             ],

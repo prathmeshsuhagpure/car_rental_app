@@ -1,6 +1,7 @@
-import 'package:car_rent_app/models/booking_model.dart';
 import 'package:flutter/material.dart';
+import '../../models/booking_model.dart';
 import '../../services/api_service.dart';
+import '../../widgets/booking_card.dart';
 
 class HostBookingsScreen extends StatefulWidget {
   const HostBookingsScreen({super.key});
@@ -12,6 +13,7 @@ class HostBookingsScreen extends StatefulWidget {
 class _HostBookingsScreenState extends State<HostBookingsScreen> {
   late Future<List<BookingModel>> _bookingsFuture;
   final apiService = ApiService();
+  String _filterStatus = 'all';
 
   @override
   void initState() {
@@ -19,142 +21,280 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
     _bookingsFuture = apiService.fetchHostBookings();
   }
 
+  List<BookingModel> _filterBookings(List<BookingModel> bookings) {
+    if (_filterStatus == 'all') return bookings;
+    return bookings.where((b) => b.rentalStatus == _filterStatus).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bookings Received')),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Bookings Received',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _buildFilterChip('all', 'All'),
+                const SizedBox(width: 8),
+                _buildFilterChip('active', 'Active'),
+                const SizedBox(width: 8),
+                _buildFilterChip('completed', 'Completed'),
+                const SizedBox(width: 8),
+                _buildFilterChip('upcoming', 'Upcoming'),
+                const SizedBox(width: 8),
+                _buildFilterChip('cancelled', 'Cancelled'),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: FutureBuilder<List<BookingModel>>(
         future: _bookingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
             return Center(
-              child: Text(
-                snapshot.error.toString(),
-                style: const TextStyle(color: Colors.red),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading bookings...',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             );
           }
 
-          final bookings = snapshot.data!;
-
-          if (bookings.isEmpty) {
-            return const Center(child: Text('No bookings received'));
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.red[700],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _bookingsFuture = apiService.fetchHostBookings();
+                      });
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: bookings.length,
-            itemBuilder: (context, index) {
-              final booking = bookings[index];
-              return BookingCard(booking: booking);
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 80,
+                    color: Colors.grey[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No bookings received yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your bookings will appear here',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final filteredBookings = _filterBookings(snapshot.data!);
+
+          if (filteredBookings.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.filter_list_off,
+                    size: 64,
+                    color: Colors.grey[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No $_filterStatus bookings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _bookingsFuture = apiService.fetchHostBookings();
+              });
             },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: filteredBookings.length,
+              itemBuilder: (context, index) {
+                return AnimatedBookingCard(
+                  booking: filteredBookings[index],
+                  index: index,
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
-}
 
-class BookingCard extends StatelessWidget {
-  final BookingModel booking;
-
-  const BookingCard({super.key, required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    final car = booking.car;
-    print(car);
-
-
-    if (car == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: (car?.images.isNotEmpty ?? false)
-                  ? Image.network(
-                      car!.images.first,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(width: 80, height: 80, color: Colors.grey[300]),
+  Widget _buildFilterChip(String value, String label) {
+    final isSelected = _filterStatus == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _filterStatus = value;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey[700],
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 13,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    car?.brand ?? 'Unknown Car',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Booked by: ${booking.userName}'),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${booking.startDate.toLocal().toString().split(' ')[0]} → ${booking.endDate.toLocal().toString().split(' ')[0]}',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '₹${booking.amount}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      StatusChip(status: booking.bookingStatus),
-                    ],
-                  )
-                ],
-              ),
-            )
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class StatusChip extends StatelessWidget {
-  final String status;
+class AnimatedBookingCard extends StatefulWidget {
+  final BookingModel booking;
+  final int index;
 
-  const StatusChip({super.key, required this.status});
+  const AnimatedBookingCard({
+    super.key,
+    required this.booking,
+    required this.index,
+  });
+
+  @override
+  State<AnimatedBookingCard> createState() => _AnimatedBookingCardState();
+}
+
+class _AnimatedBookingCardState extends State<AnimatedBookingCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    Future.delayed(Duration(milliseconds: 50 * widget.index), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-
-    switch (status) {
-      case 'approved':
-        color = Colors.green;
-        break;
-      case 'rejected':
-        color = Colors.red;
-        break;
-      default:
-        color = Colors.orange;
-    }
-
-    return Chip(
-      label: Text(status.toUpperCase()),
-      backgroundColor: color.withOpacity(0.15),
-      labelStyle: TextStyle(color: color),
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: BookingCard(booking: widget.booking),
+      ),
     );
   }
 }

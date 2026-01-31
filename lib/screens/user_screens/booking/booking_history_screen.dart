@@ -1,7 +1,6 @@
 import 'package:car_rent_app/utils/theme.dart';
 import 'package:car_rent_app/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../models/booking_model.dart';
 import '../../../providers/booking_provider.dart';
@@ -17,13 +16,7 @@ class BookingHistoryScreen extends StatefulWidget {
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   String selectedFilter = 'All';
 
-  final List<String> filterOptions = [
-    'All',
-    'Active',
-    'Completed',
-    'Pending',
-    'Cancelled'
-  ];
+  final List<String> filterOptions = ['All', 'Completed', 'Cancelled'];
 
   @override
   void initState() {
@@ -38,12 +31,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
     return bookings.where((booking) {
       switch (selectedFilter) {
-        case 'Active':
-          return booking.isActive;
         case 'Completed':
           return booking.isCompleted;
-        case 'Pending':
-          return booking.isPending;
         case 'Cancelled':
           return booking.isCancelled;
         default:
@@ -107,13 +96,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               Expanded(
                 child: bookingProvider.isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: primaryGreen,
+                        ),
                       )
                     : bookingProvider.error != null
                         ? _buildErrorState(bookingProvider.error!)
                         : filteredBookings.isEmpty
                             ? _buildEmptyState()
                             : RefreshIndicator(
+                                color: primaryGreen,
                                 onRefresh: () =>
                                     bookingProvider.loadUserBookings(),
                                 child: ListView.builder(
@@ -124,14 +116,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                     final booking = filteredBookings[index];
                                     return BookingHistoryCard(
                                       booking: booking,
-                                      onTap: () => _onBookingTap(booking),
-                                      onCancelBooking: booking.isPending
-                                          ? () => _onCancelBooking(
-                                              booking, bookingProvider)
-                                          : null,
-                                      onPayNow: booking.isPaymentPending
-                                          ? () => _onPayNow(booking)
-                                          : null,
+                                      onCancelBooking: () => _onCancelBooking(
+                                        booking,
+                                        bookingProvider,
+                                      ),
                                     );
                                   },
                                 ),
@@ -195,17 +183,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     IconData icon;
 
     switch (selectedFilter) {
-      case 'Active':
-        message = 'No active bookings found';
-        icon = Icons.directions_car;
-        break;
       case 'Completed':
         message = 'No completed bookings found';
         icon = Icons.check_circle_outline;
-        break;
-      case 'Pending':
-        message = 'No pending bookings found';
-        icon = Icons.pending_outlined;
         break;
       case 'Cancelled':
         message = 'No cancelled bookings found';
@@ -259,240 +239,46 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  void _onBookingTap(BookingModel booking) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildBookingDetailsBottomSheet(booking),
-    );
-  }
-
-  Widget _buildBookingDetailsBottomSheet(BookingModel booking) {
-    final car = booking.car;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Booking Details',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                _buildDetailRow(
-                  'Booking ID',
-                  booking.id.substring(0, 8).toUpperCase(),
-                ),
-
-                _buildDetailRow(
-                  'Car',
-                  car?.name ?? '—',
-                ),
-
-                _buildDetailRow(
-                  'Amount',
-                  '₹${booking.amount.toStringAsFixed(0)}',
-                ),
-
-                _buildDetailRow(
-                  'Duration',
-                  '${booking.durationInDays} day(s)',
-                ),
-
-                _buildDetailRow(
-                  'Pickup',
-                  booking.pickUpLocation,
-                ),
-
-                _buildDetailRow(
-                  'Drop-off',
-                  booking.dropOffLocation,
-                ),
-
-                _buildDetailRow(
-                  'Start Date',
-                  booking.formattedStartDate,
-                ),
-
-                _buildDetailRow(
-                  'End Date',
-                  booking.formattedEndDate,
-                ),
-
-                _buildDetailRow(
-                  'Booking Created',
-                  _formatDateTime(booking.createdAt),
-                ),
-
-                _buildDetailRow(
-                  'Booking Status',
-                  booking.bookingStatus.toUpperCase(),
-                ),
-
-                _buildDetailRow(
-                  'Payment Status',
-                  booking.paymentStatus.toUpperCase(),
-                ),
-
-                if (booking.paymentId != null)
-                  _buildDetailRow(
-                    'Payment ID',
-                    booking.paymentId!,
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  /*Widget _buildBookingDetailsBottomSheet(BookingModel booking) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Booking Details',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildDetailRow('Booking ID', booking.bookingId),
-                _buildDetailRow('Car', booking.carName),
-                _buildDetailRow(
-                    'Amount', '₹${booking.amount.toStringAsFixed(0)}'),
-                _buildDetailRow('Duration', _dateTimeService.durationFormatted),
-                _buildDetailRow('Pickup', booking.pickUpLocation),
-                _buildDetailRow('Drop-off', booking.dropOffLocation),
-                _buildDetailRow('Start Date', booking.formattedStartDate),
-                _buildDetailRow('End Date', booking.formattedEndDate),
-                _buildDetailRow('Booking Date', booking.formattedBookingDate),
-                _buildDetailRow('Status', booking.bookingStatus),
-                _buildDetailRow('Payment Status', booking.paymentStatus),
-                if (booking.hasPaymentId)
-                  _buildDetailRow('Payment ID', booking.paymentId!),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }*/
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _onCancelBooking(BookingModel booking, BookingProvider bookingProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Booking'),
-        content: Text(
-            'Are you sure you want to cancel booking ${booking.id}?'),
+        content: Text('Are you sure you want to cancel booking ${booking.id}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+            child: const Text(
+              'No',
+              style: TextStyle(color: primaryGreen),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _cancelBooking(booking, bookingProvider);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Yes, Cancel'),
+            style: ElevatedButton.styleFrom(backgroundColor: darkGreen),
+            child: const Text(
+              'Yes',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _onPayNow(BookingModel booking) {
-    _showErrorSnackBar('Payment functionality to be implemented');
-  }
-
   Future<void> _cancelBooking(
       BookingModel booking, BookingProvider bookingProvider) async {
     try {
-      // Show loading indicator
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: primaryGreen,
+          ),
         ),
       );
 
@@ -528,10 +314,4 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       ),
     );
   }
-
-  String _formatDateTime(DateTime dateTime) {
-    return DateFormat('MMM dd, yyyy • hh:mm a').format(dateTime);
-  }
-
-
 }
